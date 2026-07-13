@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Shield background -->
+    <path
+        android:fillColor="#E8F5E9"
+        android:pathData="M24,4L6,12v14c0,11 7.7,21.3 18,24c10.3-2.7 18-13 18-24V12L24,4z"/>
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#2E7D32"
+        android:strokeWidth="2"
+        android:pathData="M24,6L8,13.3v12.5c0,10.1 6.9,19.5 16,22.2c9.1-2.7 16-12.1 16-22.2V13.3L24,6z"/>
+    <!-- Checkmark -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#2E7D32"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M15,24 L21,30 L33,18"/>
+    <!-- T badge -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M28,8 L32,8 L32,10 L30.5,10 L30.5,14 L29.5,14 L29.5,10 L28,10 Z"/>
+</vector>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- License plate shape -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:strokeColor="#1565C0"
+        android:strokeWidth="2"
+        android:pathData="M4,14 Q4,12 6,12 L42,12 Q44,12 44,14 L44,34 Q44,36 42,36 L6,36 Q4,36 4,34 Z"/>
+    <!-- Plate border decorative -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#1976D2"
+        android:strokeWidth="1"
+        android:pathData="M6,15 L42,15 L42,33 L6,33 Z"/>
+    <!-- Text lines placeholder -->
+    <path android:fillColor="#1565C0" android:pathData="M10,20 L24,20 L24,22 L10,22 Z"/>
+    <path android:fillColor="#1565C0" android:pathData="M10,25 L38,25 L38,27 L10,27 Z"/>
+    <!-- Scan lines -->
+    <path
+        android:strokeColor="#FF9800"
+        android:strokeWidth="2"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M2,18 L6,18"/>
+    <path
+        android:strokeColor="#FF9800"
+        android:strokeWidth="2"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M42,18 L46,18"/>
+    <path
+        android:strokeColor="#FF9800"
+        android:strokeWidth="2"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M2,30 L6,30"/>
+    <path
+        android:strokeColor="#FF9800"
+        android:strokeWidth="2"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M42,30 L46,30"/>
+</vector>

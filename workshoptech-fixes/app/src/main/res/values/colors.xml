@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary brand -->
+    <color name="primary">#1565C0</color>
+    <color name="primary_dark">#0D47A1</color>
+    <color name="primary_light">#1976D2</color>
+    <color name="primary_container">#BBDEFB</color>
+
+    <!-- Secondary / Accent -->
+    <color name="secondary">#F57C00</color>
+    <color name="secondary_dark">#E65100</color>
+    <color name="secondary_container">#FFE0B2</color>
+
+    <!-- Semantic -->
+    <color name="success">#4CAF50</color>
+    <color name="success_dark">#2E7D32</color>
+    <color name="success_container">#C8E6C9</color>
+    <color name="error">#F44336</color>
+    <color name="error_dark">#C62828</color>
+    <color name="error_container">#FFCDD2</color>
+    <color name="warning">#FF9800</color>
+    <color name="warning_container">#FFF9C4</color>
+
+    <!-- Neutrals -->
+    <color name="gray_900">#212121</color>
+    <color name="gray_800">#424242</color>
+    <color name="gray_700">#616161</color>
+    <color name="gray_600">#757575</color>
+    <color name="gray_400">#BDBDBD</color>
+    <color name="gray_200">#EEEEEE</color>
+    <color name="gray_100">#F5F5F5</color>
+    <color name="white">#FFFFFF</color>
+
+    <!-- System bars -->
+    <color name="status_bar">#0D47A1</color>
+    <color name="navigation_bar">#FFFFFF</color>
+
+    <!-- Splash -->
+    <color name="splash_background">#1565C0</color>
+
+    <!-- Status chips -->
+    <color name="status_new">#2196F3</color>
+    <color name="status_approved">#4CAF50</color>
+    <color name="status_in_progress">#FF9800</color>
+    <color name="status_ready">#00BCD4</color>
+    <color name="status_delivered">#2E7D32</color>
+    <color name="status_on_hold">#F9A825</color>
+    <color name="status_cancelled">#F44336</color>
+</resources>

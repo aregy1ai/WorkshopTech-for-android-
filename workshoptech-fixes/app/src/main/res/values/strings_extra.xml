@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">ورشة تك</string>
+    <string name="app_subtitle">WorkshopTech</string>
+    <string name="app_tagline">إدارة ورشتك بالذكاء الاصطناعي</string>
+
+    <!-- Notification channels -->
+    <string name="notif_channel_tasks">المهام</string>
+    <string name="notif_channel_tasks_desc">إشعارات المهام والعمليات</string>
+    <string name="notif_channel_inspections">نقاط التفتيش</string>
+    <string name="notif_channel_inspections_desc">إشعارات نقاط جودة T1-T6</string>
+    <string name="notif_channel_system">النظام</string>
+    <string name="notif_channel_system_desc">إشعارات النظام والمزامنة</string>
+
+    <!-- Content descriptions for accessibility -->
+    <string name="cd_app_logo">شعار ورشة تك</string>
+    <string name="cd_car_image">صورة السيارة</string>
+    <string name="cd_damage_marker">علامة الضرر</string>
+    <string name="cd_back_button">رجوع</string>
+    <string name="cd_camera_button">التقاط صورة</string>
+    <string name="cd_flash_button">فلاش الكاميرا</string>
+    <string name="cd_settings_button">الإعدادات</string>
+
+    <!-- File Provider authority -->
+    <string name="file_provider_authority">com.workshoptech.fileprovider</string>
+</resources>
