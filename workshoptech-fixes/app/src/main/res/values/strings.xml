@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ورشة تك</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">الرئيسية</string>
+    <string name="nav_cases">الملفات</string>
+    <string name="nav_customers">العملاء</string>
+    <string name="nav_inventory">المخزون</string>
+    <string name="nav_technicians">الفنيين</string>
+    <string name="nav_reports">التقارير</string>
+    <string name="nav_settings">الإعدادات</string>
+    <string name="nav_help">المساعدة</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">لوحة التحكم</string>
+    <string name="dashboard_active_cases">ملفات نشطة</string>
+    <string name="dashboard_today_deliveries">تسليمات اليوم</string>
+    <string name="dashboard_pending_inspections">فحوصات معلقة</string>
+    <string name="dashboard_low_stock">مخزون منخفض</string>
+
+    <!-- Cases -->
+    <string name="cases_title">الملفات</string>
+    <string name="case_new">ملف جديد</string>
+    <string name="case_status_new">جديد</string>
+    <string name="case_status_approved">معتمد</string>
+    <string name="case_status_in_progress">قيد التنفيذ</string>
+    <string name="case_status_ready">جاهز للتسليم</string>
+    <string name="case_status_delivered">تم التسليم</string>
+    <string name="case_status_on_hold">معلق</string>
+    <string name="case_status_cancelled">ملغي</string>
+    <string name="case_plate">اللوحة</string>
+    <string name="case_vehicle">المركبة</string>
+    <string name="case_customer">العميل</string>
+    <string name="case_estimated_cost">التكلفة التقديرية</string>
+    <string name="case_actual_cost">التكلفة الفعلية</string>
+
+    <!-- Camera -->
+    <string name="camera_title">تصوير</string>
+    <string name="camera_mode_plate">تصوير اللوحة</string>
+    <string name="camera_mode_damage">تصوير الضرر</string>
+    <string name="camera_mode_general">تصوير عام</string>
+    <string name="camera_capture">التقاط</string>
+    <string name="camera_permission_required">يلزم إذن الكاميرا</string>
+    <string name="camera_permission_grant">منح الإذن</string>
+
+    <!-- Inspection Checkpoints -->
+    <string name="inspection_t1">T1: استلام السيارة</string>
+    <string name="inspection_t2">T2: بعد السمكرة</string>
+    <string name="inspection_t3">T3: تسليم للدهان</string>
+    <string name="inspection_t4">T4: قبل الرش</string>
+    <string name="inspection_t5">T5: بعد الدهان</string>
+    <string name="inspection_t6">T6: التسليم النهائي</string>
+    <string name="inspection_passed">اجتاز</string>
+    <string name="inspection_failed">لم يجتز</string>
+    <string name="inspection_pending">معلق</string>
+
+    <!-- Damage Analysis -->
+    <string name="damage_type_scratch">خدش</string>
+    <string name="damage_type_dent">بعجة</string>
+    <string name="damage_type_crack">تشقق</string>
+    <string name="damage_type_paint_peel">تقشر دهان</string>
+    <string name="damage_type_rust">صدأ</string>
+    <string name="damage_severity_low">خفيف</string>
+    <string name="damage_severity_medium">متوسط</string>
+    <string name="damage_severity_high">شديد</string>
+
+    <!-- Car Parts -->
+    <string name="part_hood">غطاء المحرك</string>
+    <string name="part_trunk">صندوق الأمتعة</string>
+    <string name="part_roof">السقف</string>
+    <string name="part_front_bumper">الصدام الأمامي</string>
+    <string name="part_rear_bumper">الصدام الخلفي</string>
+    <string name="part_front_right_door">الباب الأمامي الأيمن</string>
+    <string name="part_front_left_door">الباب الأمامي الأيسر</string>
+    <string name="part_rear_right_door">الباب الخلفي الأيمن</string>
+    <string name="part_rear_left_door">الباب الخلفي الأيسر</string>
+    <string name="part_front_right_fender">الرفرف الأمامي الأيمن</string>
+    <string name="part_front_left_fender">الرفرف الأمامي الأيسر</string>
+    <string name="part_rear_right_fender">الرفرف الخلفي الأيمن</string>
+    <string name="part_rear_left_fender">الرفرف الخلفي الأيسر</string>
+
+    <!-- Countries -->
+    <string name="country_ly">ليبيا</string>
+    <string name="country_eg">مصر</string>
+    <string name="country_sa">المملكة العربية السعودية</string>
+    <string name="country_ae">الإمارات العربية المتحدة</string>
+    <string name="country_kw">الكويت</string>
+    <string name="country_qa">قطر</string>
+    <string name="country_bh">البحرين</string>
+    <string name="country_om">عُمان</string>
+    <string name="country_jo">الأردن</string>
+    <string name="country_lb">لبنان</string>
+    <string name="country_sy">سوريا</string>
+    <string name="country_iq">العراق</string>
+    <string name="country_ye">اليمن</string>
+    <string name="country_ps">فلسطين</string>
+    <string name="country_sd">السودان</string>
+    <string name="country_tn">تونس</string>
+    <string name="country_dz">الجزائر</string>
+    <string name="country_ma">المغرب</string>
+    <string name="country_mr">موريتانيا</string>
+    <string name="country_so">الصومال</string>
+    <string name="country_dj">جيبوتي</string>
+    <string name="country_km">جزر القمر</string>
+
+    <!-- Permissions -->
+    <string name="permission_camera">الكاميرا</string>
+    <string name="permission_camera_desc">لتصوير السيارات واللوحات</string>
+    <string name="permission_storage">التخزين</string>
+    <string name="permission_storage_desc">لحفظ الصور والتقارير</string>
+    <string name="permission_location">الموقع</string>
+    <string name="permission_location_desc">للتعرف التلقائي على الدولة</string>
+
+    <!-- Common Actions -->
+    <string name="action_save">حفظ</string>
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_edit">تعديل</string>
+    <string name="action_search">بحث</string>
+    <string name="action_filter">تصفية</string>
+    <string name="action_export">تصدير</string>
+    <string name="action_share">مشاركة</string>
+    <string name="action_back">رجوع</string>
+    <string name="action_next">التالي</string>
+    <string name="action_confirm">تأكيد</string>
+    <string name="action_retry">إعادة المحاولة</string>
+
+    <!-- Common States -->
+    <string name="state_loading">جاري التحميل…</string>
+    <string name="state_empty">لا توجد نتائج</string>
+    <string name="state_error">حدث خطأ</string>
+    <string name="state_success">تم بنجاح</string>
+
+    <!-- Color Matching -->
+    <string name="color_match_title">مطابقة الألوان</string>
+    <string name="color_code">كود اللون</string>
+    <string name="color_vehicle_age">عمر السيارة (سنوات)</string>
+    <string name="color_sun_exposure">التعرض للشمس</string>
+    <string name="color_sun_low">منخفض</string>
+    <string name="color_sun_medium">متوسط</string>
+    <string name="color_sun_high">عالٍ</string>
+    <string name="color_calculate">احسب الخلطة</string>
+    <string name="color_delta_e">مطابقة اللون (Delta E)</string>
+    <string name="color_result_excellent">ممتاز (ΔE &lt; 2.0)</string>
+    <string name="color_result_acceptable">مقبول (ΔE 2.0–3.5)</string>
+    <string name="color_result_rejected">غير مقبول (ΔE &gt; 3.5)</string>
+
+    <!-- Notifications -->
+    <string name="notif_channel_tasks">المهام</string>
+    <string name="notif_channel_tasks_desc">إشعارات المهام والتذكيرات</string>
+    <string name="notif_channel_inspections">التفتيش</string>
+    <string name="notif_channel_inspections_desc">إشعارات نقاط التفتيش</string>
+    <string name="notif_channel_system">النظام</string>
+    <string name="notif_channel_system_desc">إشعارات النظام العامة</string>
+    <string name="notif_low_stock">مخزون منخفض</string>
+    <string name="notif_ready_delivery">جاهز للتسليم</string>
+
+    <!-- Quality Analysis -->
+    <string name="quality_blurry">الصورة مهزوزة</string>
+    <string name="quality_dark">الإضاءة غير كافية</string>
+    <string name="quality_bright">الإضاءة زائدة</string>
+    <string name="quality_glare">يوجد انعكاس</string>
+    <string name="quality_tip_stabilize">ثبّت الهاتف وأعد التصوير</string>
+    <string name="quality_tip_flash">استخدم الفلاش أو أضف إضاءة</string>
+    <string name="quality_tip_angle">غيّر زاوية التصوير</string>
+
+    <!-- Report -->
+    <string name="report_delivery_title">تقرير التسليم</string>
+    <string name="report_receipt_date">تاريخ الاستلام</string>
+    <string name="report_delivery_date">تاريخ التسليم</string>
+    <string name="report_work_done">العمل المنجز</string>
+    <string name="report_warranty">الضمان: سنة على الدهان</string>
+    <string name="report_signature_bodyman">توقيع السمكري</string>
+    <string name="report_signature_painter">توقيع الدهان</string>
+    <string name="report_signature_qc">توقيع مراقب الجودة</string>
+    <string name="report_signature_customer">توقيع العميل</string>
+</resources>

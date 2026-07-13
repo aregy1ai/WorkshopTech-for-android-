@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude domain="database" path="workshop_tech.db" />
+    <exclude domain="sharedpref" path="workshop_tech_prefs.xml" />
+    <exclude domain="file" path="." />
+</full-backup-content>
