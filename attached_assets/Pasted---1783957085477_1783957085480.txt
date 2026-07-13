@@ -1,0 +1,746 @@
+نعم، هناك ملفات مهمة مطلوبة لاكتمال المشروع وقابليته للتشغيل. هذه هي الملفات الناقصة:
+
+---
+
+الملفات الناقصة الأساسية
+
+1. build.gradle.kts (مستوى المشروع - Project-level)
+
+```kotlin
+plugins {
+    id("com.android.application") version "8.2.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.20" apply false
+    id("com.google.devtools.ksp") version "1.9.20-1.0.14" apply false
+}
+```
+
+2. gradle.properties (محدث)
+
+```properties
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+kotlin.code.style=official
+android.nonTransitiveRClass=true
+android.enableJetifier=true
+```
+
+3. app/proguard-rules.pro
+
+```pro
+-keepclassmembers class * {
+    @androidx.room.* <fields>;
+    @androidx.room.* <methods>;
+}
+-keep class com.workshoptech.data.entity.** { *; }
+```
+
+4. gradle/wrapper/gradle-wrapper.properties
+
+```properties
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+```
+
+5. app/src/main/res/values/themes.xml
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.WorkshopTech" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+</resources>
+```
+
+6. app/src/main/res/values/colors.xml
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#FF1565C0</color>
+    <color name="primary_dark">#FF0D47A1</color>
+    <color name="accent">#FF7B1FA2</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="background">#FFF5F5F5</color>
+    <color name="surface">#FFFFFFFF</color>
+    <color name="error">#FFB00020</color>
+    <color name="success">#FF2E7D32</color>
+    <color name="warning">#FFFF9800</color>
+</resources>
+```
+
+7. app/src/main/res/mipmap-hdpi/ic_launcher.xml (مؤقت)
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/primary"/>
+    <foreground android:drawable="@color/white"/>
+</adaptive-icon>
+```
+
+8. domain/model/DamageReport.kt
+
+```kotlin
+package com.workshoptech.domain.model
+
+data class DamageReport(
+    val regions: List<DamageRegion>,
+    val totalAffectedArea: Float,
+    val estimatedSeverity: String,
+    val repairFeasibility: String,
+    val source: String
+)
+
+data class DamageRegion(
+    val type: String,
+    val severity: String,
+    val boundingBox: BoundingBox,
+    val areaPercentage: Float,
+    val affectedPart: String?,
+    val confidence: Float
+)
+
+data class BoundingBox(
+    val left: Float,
+    val top: Float,
+    val right: Float,
+    val bottom: Float
+)
+```
+
+9. data/entity/WorkflowTaskEntity.kt
+
+```kotlin
+package com.workshoptech.data.entity
+
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
+
+@Entity(
+    tableName = "workflow_tasks",
+    indices = [Index("caseId"), Index("assignedTo")]
+)
+data class WorkflowTaskEntity(
+    @PrimaryKey val taskId: String,
+    val caseId: String,
+    val type: String,
+    val assignedTo: String?,
+    val status: String,
+    val priority: String,
+    val plannedStart: Long?,
+    val plannedEnd: Long?,
+    val actualStart: Long?,
+    val actualEnd: Long?
+)
+```
+
+10. data/entity/TechnicianEntity.kt
+
+```kotlin
+package com.workshoptech.data.entity
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "technicians")
+data class TechnicianEntity(
+    @PrimaryKey val technicianId: String,
+    val name: String,
+    val specialty: String,
+    val phone: String?,
+    val active: Boolean,
+    val totalCompleted: Int,
+    val averageRating: Float
+)
+```
+
+11. data/entity/InventoryEntity.kt
+
+```kotlin
+package com.workshoptech.data.entity
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "inventory")
+data class InventoryEntity(
+    @PrimaryKey val itemId: String,
+    val name: String,
+    val category: String,
+    val quantity: Int,
+    val minQuantity: Int,
+    val unitPrice: Double,
+    val supplierId: String?
+)
+```
+
+12. data/entity/AnalysisResultEntity.kt
+
+```kotlin
+package com.workshoptech.data.entity
+
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
+
+@Entity(
+    tableName = "analysis_results",
+    indices = [Index("photoId")]
+)
+data class AnalysisResultEntity(
+    @PrimaryKey val resultId: String,
+    val photoId: String,
+    val layer: String,
+    val version: String,
+    val isOnline: Boolean,
+    val rawJson: String,
+    val confidence: Float,
+    val createdAt: Long
+)
+```
+
+13. data/dao/WorkflowTaskDao.kt
+
+```kotlin
+package com.workshoptech.data.dao
+
+import androidx.room.*
+import com.workshoptech.data.entity.WorkflowTaskEntity
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface WorkflowTaskDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(task: WorkflowTaskEntity)
+
+    @Query("SELECT * FROM workflow_tasks WHERE caseId = :caseId ORDER BY priority DESC")
+    fun observeByCase(caseId: String): Flow<List<WorkflowTaskEntity>>
+
+    @Query("SELECT * FROM workflow_tasks WHERE assignedTo = :technicianId")
+    fun observeByTechnician(technicianId: String): Flow<List<WorkflowTaskEntity>>
+}
+```
+
+14. data/dao/TechnicianDao.kt
+
+```kotlin
+package com.workshoptech.data.dao
+
+import androidx.room.*
+import com.workshoptech.data.entity.TechnicianEntity
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface TechnicianDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(technician: TechnicianEntity)
+
+    @Query("SELECT * FROM technicians WHERE active = 1 ORDER BY name")
+    fun observeActive(): Flow<List<TechnicianEntity>>
+
+    @Query("SELECT * FROM technicians ORDER BY name")
+    fun observeAll(): Flow<List<TechnicianEntity>>
+}
+```
+
+15. data/dao/InventoryDao.kt
+
+```kotlin
+package com.workshoptech.data.dao
+
+import androidx.room.*
+import com.workshoptech.data.entity.InventoryEntity
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface InventoryDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(item: InventoryEntity)
+
+    @Query("SELECT * FROM inventory ORDER BY category, name")
+    fun observeAll(): Flow<List<InventoryEntity>>
+
+    @Query("SELECT * FROM inventory WHERE quantity <= minQuantity")
+    fun observeLowStock(): Flow<List<InventoryEntity>>
+
+    @Query("UPDATE inventory SET quantity = quantity - :amount WHERE itemId = :itemId")
+    suspend fun decrement(itemId: String, amount: Int)
+}
+```
+
+16. data/AppDatabase.kt (محدث)
+
+```kotlin
+package com.workshoptech.data
+
+import android.content.Context
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import com.workshoptech.data.dao.*
+import com.workshoptech.data.entity.*
+
+@Database(
+    entities = [
+        CaseEntity::class,
+        CasePhotoEntity::class,
+        CustomerEntity::class,
+        DamageFindingEntity::class,
+        InspectionEntity::class,
+        WorkflowTaskEntity::class,
+        TechnicianEntity::class,
+        InventoryEntity::class,
+        AnalysisResultEntity::class
+    ],
+    version = 2
+)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun caseDao(): CaseDao
+    abstract fun customerDao(): CustomerDao
+    abstract fun photoDao(): PhotoDao
+    abstract fun inspectionDao(): InspectionDao
+    abstract fun workflowTaskDao(): WorkflowTaskDao
+    abstract fun technicianDao(): TechnicianDao
+    abstract fun inventoryDao(): InventoryDao
+
+    companion object {
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
+
+        fun getInstance(context: Context): AppDatabase {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "workshop_tech.db"
+                )
+                .fallbackToDestructiveMigration()
+                .build()
+                INSTANCE = instance
+                instance
+            }
+        }
+    }
+}
+```
+
+17. data/repository/WorkshopRepository.kt (محدث)
+
+```kotlin
+package com.workshoptech.data.repository
+
+import com.workshoptech.data.dao.*
+import com.workshoptech.data.entity.*
+import kotlinx.coroutines.flow.Flow
+
+class WorkshopRepository(
+    private val caseDao: CaseDao,
+    private val customerDao: CustomerDao,
+    private val photoDao: PhotoDao,
+    private val inspectionDao: InspectionDao,
+    private val workflowTaskDao: WorkflowTaskDao,
+    private val technicianDao: TechnicianDao,
+    private val inventoryDao: InventoryDao
+) {
+    fun observeCases(query: String?): Flow<List<CaseEntity>> {
+        return if (query.isNullOrBlank()) caseDao.observeAll()
+        else caseDao.search(query)
+    }
+
+    fun observeCase(caseId: String): Flow<CaseEntity?> = caseDao.observeById(caseId)
+
+    suspend fun upsertCase(case: CaseEntity) = caseDao.upsert(case)
+
+    suspend fun updateCaseStatus(caseId: String, status: String) {
+        caseDao.updateStatus(caseId, status, System.currentTimeMillis())
+    }
+
+    fun observeCustomers(query: String?): Flow<List<CustomerEntity>> {
+        return if (query.isNullOrBlank()) customerDao.observeAll()
+        else customerDao.search(query)
+    }
+
+    suspend fun findCustomerByPhone(phone: String): CustomerEntity? =
+        customerDao.findByPhone(phone)
+
+    suspend fun upsertCustomer(customer: CustomerEntity) = customerDao.upsert(customer)
+
+    fun observePhotos(caseId: String): Flow<List<CasePhotoEntity>> =
+        photoDao.observeByCase(caseId)
+
+    suspend fun addPhoto(photo: CasePhotoEntity) = photoDao.insert(photo)
+
+    fun observeInspections(caseId: String): Flow<List<InspectionEntity>> =
+        inspectionDao.observeByCase(caseId)
+
+    suspend fun upsertInspection(inspection: InspectionEntity) =
+        inspectionDao.upsert(inspection)
+
+    fun observeTasks(caseId: String): Flow<List<WorkflowTaskEntity>> =
+        workflowTaskDao.observeByCase(caseId)
+
+    suspend fun upsertTask(task: WorkflowTaskEntity) = workflowTaskDao.upsert(task)
+
+    fun observeTechnicians(): Flow<List<TechnicianEntity>> = technicianDao.observeActive()
+
+    fun observeInventory(): Flow<List<InventoryEntity>> = inventoryDao.observeAll()
+
+    fun observeLowStock(): Flow<List<InventoryEntity>> = inventoryDao.observeLowStock()
+}
+```
+
+18. WorkshopTechApp.kt (محدث)
+
+```kotlin
+package com.workshoptech
+
+import android.app.Application
+import com.workshoptech.data.AppDatabase
+import com.workshoptech.data.repository.WorkshopRepository
+
+class WorkshopTechApp : Application() {
+    lateinit var database: AppDatabase
+        private set
+    lateinit var repository: WorkshopRepository
+        private set
+
+    override fun onCreate() {
+        super.onCreate()
+        database = AppDatabase.getInstance(this)
+        repository = WorkshopRepository(
+            database.caseDao(),
+            database.customerDao(),
+            database.photoDao(),
+            database.inspectionDao(),
+            database.workflowTaskDao(),
+            database.technicianDao(),
+            database.inventoryDao()
+        )
+    }
+}
+```
+
+19. viewmodel/ViewModelFactory.kt (محدث)
+
+```kotlin
+package com.workshoptech.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.workshoptech.data.repository.WorkshopRepository
+
+class ViewModelFactory(
+    private val repository: WorkshopRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return when {
+            modelClass.isAssignableFrom(DashboardViewModel::class.java) ->
+                DashboardViewModel(repository) as T
+            modelClass.isAssignableFrom(CaseListViewModel::class.java) ->
+                CaseListViewModel(repository) as T
+            modelClass.isAssignableFrom(CreateCaseViewModel::class.java) ->
+                CreateCaseViewModel(repository) as T
+            modelClass.isAssignableFrom(CaseDetailViewModel::class.java) ->
+                CaseDetailViewModel(repository) as T
+            modelClass.isAssignableFrom(InspectionViewModel::class.java) ->
+                InspectionViewModel(repository) as T
+            else -> throw IllegalArgumentException("Unknown ViewModel: ${modelClass.name}")
+        }
+    }
+}
+```
+
+20. ui/inventory/InventoryScreen.kt
+
+```kotlin
+package com.workshoptech.ui.inventory
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.workshoptech.data.entity.InventoryEntity
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InventoryScreen(
+    items: List<InventoryEntity>,
+    lowStockItems: List<InventoryEntity>,
+    onNavigateBack: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("المخزون") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "رجوع")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (lowStockItems.isNotEmpty()) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                Icon(Icons.Default.Warning, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("مخزون منخفض", fontWeight = FontWeight.Bold)
+                            }
+                            Text("${lowStockItems.size} عناصر تحتاج إعادة تخزين")
+                        }
+                    }
+                }
+            }
+
+            item {
+                Text(
+                    "جميع العناصر (${items.size})",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+
+            items(items) { item ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(item.name, fontWeight = FontWeight.Bold)
+                            Text("${item.category} - ${item.quantity} قطعة")
+                        }
+                        if (item.quantity <= item.minQuantity) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = "مخزون منخفض",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+21. ui/technician/TechnicianScreen.kt
+
+```kotlin
+package com.workshoptech.ui.technician
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.workshoptech.data.entity.TechnicianEntity
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TechnicianScreen(
+    technicians: List<TechnicianEntity>,
+    onNavigateBack: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("الفنيين") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "رجوع")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(technicians) { tech ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(tech.name, fontWeight = FontWeight.Bold)
+                            Text(tech.specialty)
+                            Text("مكتمل: ${tech.totalCompleted}")
+                        }
+                        Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
+                            Row {
+                                repeat(tech.averageRating.toInt()) {
+                                    Icon(
+                                        Icons.Default.Star,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.tertiary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                            Text("${tech.averageRating}/5")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+22. ui/reports/ReportScreen.kt
+
+```kotlin
+package com.workshoptech.ui.reports
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReportScreen(
+    onNavigateBack: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("التقارير") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "رجوع")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("التقارير المتاحة", fontWeight = FontWeight.Bold)
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Icon(Icons.Default.Assessment, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("تقرير الإنتاجية اليومي")
+                    }
+                }
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Icon(Icons.Default.TrendingUp, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("تقرير الإيرادات الشهري")
+                    }
+                }
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Icon(Icons.Default.People, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("تقرير أداء الفنيين")
+                    }
+                }
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Icon(Icons.Default.Inventory, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("تقرير المخزون")
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+📊 الملفات الناقصة - ملخص
+
+# الملف الحالة
+1 build.gradle.kts (Project) ✅ مطلوب
+2 gradle.properties (محدث) ✅ مطلوب
+3 proguard-rules.pro ✅ مطلوب
+4 gradle-wrapper.properties ✅ مطلوب
+5 themes.xml ✅ مطلوب
+6 colors.xml ✅ مطلوب
+7 ic_launcher.xml ✅ مطلوب
+8 DamageReport.kt ✅ مطلوب
+9 WorkflowTaskEntity.kt ✅ مطلوب
+10 TechnicianEntity.kt ✅ مطلوب
+11 InventoryEntity.kt ✅ مطلوب
+12 AnalysisResultEntity.kt ✅ مطلوب
+13 WorkflowTaskDao.kt ✅ مطلوب
+14 TechnicianDao.kt ✅ مطلوب
+15 InventoryDao.kt ✅ مطلوب
+16 AppDatabase.kt (محدث) ✅ مطلوب
+17 WorkshopRepository.kt (محدث) ✅ مطلوب
+18 WorkshopTechApp.kt (محدث) ✅ مطلوب
+19 ViewModelFactory.kt (محدث) ✅ مطلوب
+20 InventoryScreen.kt ✅ مطلوب
+21 TechnicianScreen.kt ✅ مطلوب
+22 ReportScreen.kt ✅ مطلوب
+
+---
+
+بعد إضافة هذه الملفات الـ 22، يصبح المشروع مكتملاً بـ 66 ملفاً جاهزاً للتشغيل.

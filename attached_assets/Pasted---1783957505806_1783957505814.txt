@@ -1,0 +1,717 @@
+سأقوم بكتابة الملفات الإضافية الثلاثة لإكمال المشروع بشكل نهائي.
+
+---
+
+الدفعة الثالثة والثلاثون: الملفات الإضافية النهائية
+
+107. ui/help/HelpScreen.kt
+
+```kotlin
+package com.workshoptech.ui.help
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+
+data class HelpTopic(
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val title: String,
+    val description: String,
+    val steps: List<String>
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HelpScreen(
+    onNavigateBack: () -> Unit
+) {
+    val helpTopics = listOf(
+        HelpTopic(
+            icon = Icons.Default.Add,
+            title = "إنشاء ملف جديد",
+            description = "كيفية إنشاء ملف لسيارة جديدة في الورشة",
+            steps = listOf(
+                "اضغط على زر + في الشاشة الرئيسية",
+                "اختر الدولة من القائمة",
+                "صور اللوحة أو أدخلها يدوياً",
+                "أدخل معلومات المركبة (الماركة، الموديل، السنة)",
+                "اضغط حفظ لإنشاء الملف"
+            )
+        ),
+        HelpTopic(
+            icon = Icons.Default.CameraAlt,
+            title = "تصوير السيارة",
+            description = "كيفية تصوير السيارة والأضرار",
+            steps = listOf(
+                "افتح ملف السيارة المطلوب",
+                "اضغط على أيقونة الكاميرا",
+                "وجه الكاميرا للوحة أو منطقة الضرر",
+                "تأكد من وضوح الصورة وإضاءتها",
+                "اضغط زر الالتقاط"
+            )
+        ),
+        HelpTopic(
+            icon = Icons.Default.VerifiedUser,
+            title = "نقاط التفتيش",
+            description = "كيفية استخدام نظام التفتيش T1-T6",
+            steps = listOf(
+                "من شاشة الملف، اضغط على نقطة التفتيش المطلوبة",
+                "راجع قائمة الفحص لكل مرحلة",
+                "حدد جميع البنود المكتملة",
+                "أدخل اسم المفتش والملاحظات",
+                "اضغط حفظ لتسجيل التفتيش"
+            )
+        ),
+        HelpTopic(
+            icon = Icons.Default.Palette,
+            title = "مطابقة الألوان",
+            description = "كيفية استخدام نظام مطابقة ألوان الدهان",
+            steps = listOf(
+                "من القائمة، اختر مطابقة الألوان",
+                "أدخل كود اللون من لوحة بيانات السيارة",
+                "حدد عمر السيارة ومستوى التعرض للشمس",
+                "اضغط حساب الخلطة للحصول على التوصية",
+                "جرب الخلطة على بطاقة اختبار أولاً"
+            )
+        ),
+        HelpTopic(
+            icon = Icons.Default.Analytics,
+            title = "تحليل الضرر",
+            description = "كيفية فهم نتائج تحليل الضرر",
+            steps = listOf(
+                "بعد التصوير، يظهر تحليل الضرر تلقائياً",
+                "المناطق الحمراء: ضرر شديد",
+                "المناطق البرتقالية: ضرر متوسط",
+                "المناطق الصفراء: ضرر طفيف",
+                "اضغط على أي منطقة للتفاصيل"
+            )
+        ),
+        HelpTopic(
+            icon = Icons.Default.Compare,
+            title = "مقارنة قبل وبعد",
+            description = "كيفية مقارنة الصور قبل وبعد الإصلاح",
+            steps = listOf(
+                "من شاشة الملف، اختر صورتين للمقارنة",
+                "اسحب شريط التمرير لليسار واليمين",
+                "الجهة اليسرى: الصورة قبل الإصلاح",
+                "الجهة اليمنى: الصورة بعد الإصلاح",
+                "يمكن مشاركة المقارنة مع العميل"
+            )
+        ),
+        HelpTopic(
+            icon = Icons.Default.Share,
+            title = "مشاركة التقارير",
+            description = "كيفية تصدير ومشاركة تقارير التسليم",
+            steps = listOf(
+                "من شاشة الملف، اختر تصدير",
+                "حدد صيغة التصدير (PDF أو JSON)",
+                "اختر البيانات المراد تضمينها",
+                "اضغط تصدير ومشاركة",
+                "اختر طريقة المشاركة المناسبة"
+            )
+        ),
+        HelpTopic(
+            icon = Icons.Default.Backup,
+            title = "النسخ الاحتياطي",
+            description = "كيفية عمل نسخة احتياطية واستعادة البيانات",
+            steps = listOf(
+                "من الإعدادات، اختر نسخ احتياطي",
+                "اختر إنشاء نسخة احتياطية",
+                "حدد موقع حفظ الملف",
+                "للاستعادة: اختر استعادة من نسخة احتياطية",
+                "حدد ملف النسخة الاحتياطية"
+            )
+        ),
+        HelpTopic(
+            icon = Icons.Default.Language,
+            title = "تغيير الدولة",
+            description = "كيفية تغيير إعدادات الدولة والعملة",
+            steps = listOf(
+                "من الإعدادات، اختر الدولة",
+                "اختر الدولة المطلوبة من القائمة",
+                "سيتم تحديث أنماط اللوحات والعملة تلقائياً",
+                "يمكن تفعيل التعرف التلقائي عبر GPS",
+                "التطبيق يدعم 22 دولة عربية"
+            )
+        ),
+        HelpTopic(
+            icon = Icons.Default.Fingerprint,
+            title = "قفل التطبيق",
+            description = "كيفية تفعيل قفل التطبيق بالبصمة",
+            steps = listOf(
+                "من الإعدادات، اختر الأمان",
+                "فعل خيار قفل التطبيق بالبصمة",
+                "أكد هويتك بالبصمة",
+                "سيطلب التطبيق البصمة عند كل فتح",
+                "يمكن تعطيله من نفس الإعدادات"
+            )
+        )
+    )
+
+    var expandedTopic by remember { mutableStateOf<Int?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredTopics = if (searchQuery.isBlank()) {
+        helpTopics
+    } else {
+        helpTopics.filter {
+            it.title.contains(searchQuery, ignoreCase = true) ||
+            it.description.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("المساعدة") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "رجوع")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("بحث في المساعدة") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Info, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "مواضيع المساعدة (${filteredTopics.size})",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            items(filteredTopics.size) { index ->
+                val topic = filteredTopics[index]
+                val isExpanded = expandedTopic == index
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        expandedTopic = if (isExpanded) null else index
+                    }
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    topic.icon,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        topic.title,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        topic.description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+                            Icon(
+                                if (isExpanded) Icons.Default.ExpandLess
+                                else Icons.Default.ExpandMore,
+                                contentDescription = null
+                            )
+                        }
+
+                        if (isExpanded) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider()
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            topic.steps.forEachIndexed { stepIndex, step ->
+                                Row(
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        "${stepIndex + 1}.",
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(step)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+108. util/AnalyticsTracker.kt
+
+```kotlin
+package com.workshoptech.util
+
+import android.content.Context
+import com.google.gson.Gson
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
+
+data class AnalyticsEvent(
+    val eventName: String,
+    val parameters: Map<String, String>,
+    val timestamp: Long
+)
+
+data class AnalyticsReport(
+    val totalSessions: Int,
+    val totalCases: Int,
+    val totalPhotos: Int,
+    val totalInspections: Int,
+    val popularFeatures: List<Pair<String, Int>>,
+    val averageSessionDuration: Long,
+    val dailyActiveUsers: Int,
+    val errorRate: Float
+)
+
+class AnalyticsTracker(private val context: Context) {
+    private val gson = Gson()
+    private val analyticsDir = File(context.filesDir, "analytics")
+    private val eventsFile = File(analyticsDir, "events.json")
+    private val sessionsFile = File(analyticsDir, "sessions.json")
+
+    private var sessionStartTime: Long = 0
+    private var eventsBatch = mutableListOf<AnalyticsEvent>()
+
+    init {
+        if (!analyticsDir.exists()) analyticsDir.mkdirs()
+    }
+
+    fun startSession() {
+        sessionStartTime = System.currentTimeMillis()
+        trackEvent("session_start", mapOf(
+            "timestamp" to sessionStartTime.toString()
+        ))
+    }
+
+    fun endSession() {
+        val duration = System.currentTimeMillis() - sessionStartTime
+        trackEvent("session_end", mapOf(
+            "duration" to duration.toString(),
+            "events_count" to eventsBatch.size.toString()
+        ))
+        saveBatch()
+    }
+
+    fun trackEvent(eventName: String, parameters: Map<String, String> = emptyMap()) {
+        val event = AnalyticsEvent(
+            eventName = eventName,
+            parameters = parameters,
+            timestamp = System.currentTimeMillis()
+        )
+        eventsBatch.add(event)
+
+        if (eventsBatch.size >= 20) {
+            saveBatch()
+        }
+    }
+
+    fun trackCaseCreated(country: String) {
+        trackEvent("case_created", mapOf("country" to country))
+    }
+
+    fun trackPhotoCaptured(mode: String) {
+        trackEvent("photo_captured", mapOf("mode" to mode))
+    }
+
+    fun trackInspectionCompleted(type: String, status: String) {
+        trackEvent("inspection_completed", mapOf(
+            "type" to type,
+            "status" to status
+        ))
+    }
+
+    fun trackDamageAnalyzed(severity: String) {
+        trackEvent("damage_analyzed", mapOf("severity" to severity))
+    }
+
+    fun trackColorMatched(colorCode: String) {
+        trackEvent("color_matched", mapOf("colorCode" to colorCode))
+    }
+
+    fun trackSearchPerformed(query: String) {
+        trackEvent("search_performed", mapOf("query" to query))
+    }
+
+    fun trackExportPerformed(format: String) {
+        trackEvent("export_performed", mapOf("format" to format))
+    }
+
+    fun trackError(component: String, errorMessage: String) {
+        trackEvent("error_occurred", mapOf(
+            "component" to component,
+            "message" to errorMessage
+        ))
+    }
+
+    fun trackFeatureUsed(feature: String) {
+        trackEvent("feature_used", mapOf("feature" to feature))
+    }
+
+    private fun saveBatch() {
+        try {
+            val existingEvents = loadEvents().toMutableList()
+            existingEvents.addAll(eventsBatch)
+            eventsFile.writeText(gson.toJson(existingEvents))
+            eventsBatch.clear()
+        } catch (e: Exception) {
+            // فشل صامت - التحليلات لا تؤثر على وظيفة التطبيق
+        }
+    }
+
+    private fun loadEvents(): List<AnalyticsEvent> {
+        return if (eventsFile.exists()) {
+            try {
+                val type = object : com.google.gson.reflect.TypeToken<List<AnalyticsEvent>>() {}.type
+                gson.fromJson(eventsFile.readText(), type)
+            } catch (e: Exception) {
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
+    }
+
+    fun generateReport(): AnalyticsReport {
+        val events = loadEvents()
+
+        val sessions = events.filter { it.eventName == "session_end" }
+        val casesCreated = events.count { it.eventName == "case_created" }
+        val photosCaptured = events.count { it.eventName == "photo_captured" }
+        val inspections = events.count { it.eventName == "inspection_completed" }
+        val errors = events.count { it.eventName == "error_occurred" }
+
+        val featureUsage = events
+            .filter { it.eventName == "feature_used" }
+            .groupBy { it.parameters["feature"] ?: "unknown" }
+            .mapValues { it.value.size }
+            .toList()
+            .sortedByDescending { it.second }
+            .take(10)
+
+        val totalDuration = sessions.sumOf {
+            (it.parameters["duration"]?.toLongOrNull() ?: 0)
+        }
+        val averageDuration = if (sessions.isNotEmpty()) totalDuration / sessions.size else 0
+
+        val todayStart = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+        }.timeInMillis
+
+        val todaySessions = sessions.count { it.timestamp >= todayStart }
+
+        return AnalyticsReport(
+            totalSessions = sessions.size,
+            totalCases = casesCreated,
+            totalPhotos = photosCaptured,
+            totalInspections = inspections,
+            popularFeatures = featureUsage,
+            averageSessionDuration = averageDuration,
+            dailyActiveUsers = todaySessions,
+            errorRate = if (events.isNotEmpty()) errors.toFloat() / events.size else 0f
+        )
+    }
+
+    fun exportReport(): File {
+        val report = generateReport()
+        val reportFile = File(analyticsDir, "report_${SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())}.json")
+        reportFile.writeText(gson.toJson(report))
+        return reportFile
+    }
+
+    fun clearOldData(daysToKeep: Int = 30) {
+        val cutoff = System.currentTimeMillis() - (daysToKeep * 24 * 60 * 60 * 1000L)
+        val events = loadEvents().filter { it.timestamp >= cutoff }
+        eventsFile.writeText(gson.toJson(events))
+    }
+}
+```
+
+109. workers/DailyReportWorker.kt
+
+```kotlin
+package com.workshoptech.workers
+
+import android.content.Context
+import androidx.work.*
+import com.workshoptech.WorkshopTechApp
+import com.workshoptech.data.AppDatabase
+import com.workshoptech.service.NotificationHelper
+import com.workshoptech.util.AnalyticsTracker
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.concurrent.TimeUnit
+
+class DailyReportWorker(
+    context: Context,
+    params: WorkerParameters
+) : CoroutineWorker(context, params) {
+
+    private val database = AppDatabase.getInstance(context)
+    private val analyticsTracker = AnalyticsTracker(context)
+
+    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        try {
+            generateDailyReport()
+            checkLowStockItems()
+            checkOverdueTasks()
+            checkPendingInspections()
+            analyticsTracker.clearOldData(30)
+
+            Result.success()
+        } catch (e: Exception) {
+            if (runAttemptCount < 3) {
+                Result.retry()
+            } else {
+                Result.failure()
+            }
+        }
+    }
+
+    private suspend fun generateDailyReport() {
+        val caseDao = database.caseDao()
+        val startOfDay = getStartOfDay()
+        val endOfDay = getEndOfDay()
+
+        val todayNewCases = caseDao.observeAll().firstOrNull()?.count {
+            it.createdAt in startOfDay..endOfDay
+        } ?: 0
+
+        val todayDeliveredCases = caseDao.observeAll().firstOrNull()?.count {
+            it.status == "DELIVERED" && it.updatedAt in startOfDay..endOfDay
+        } ?: 0
+
+        val inProgressCases = caseDao.observeByStatus("APPROVED").firstOrNull()?.size ?: 0
+
+        val monthlyRevenue = caseDao.getMonthlyRevenue(getStartOfMonth()) ?: 0.0
+
+        val reportMessage = buildString {
+            append("التقرير اليومي - ${SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())}")
+            append("\n")
+            append("حالات جديدة اليوم: $todayNewCases")
+            append("\n")
+            append("تم التسليم اليوم: $todayDeliveredCases")
+            append("\n")
+            append("قيد الإصلاح: $inProgressCases")
+            append("\n")
+            append("إيرادات الشهر: ${"%.2f".format(monthlyRevenue)}")
+        }
+
+        analyticsTracker.trackEvent("daily_report_generated", mapOf(
+            "newCases" to todayNewCases.toString(),
+            "deliveredCases" to todayDeliveredCases.toString(),
+            "inProgress" to inProgressCases.toString()
+        ))
+    }
+
+    private suspend fun checkLowStockItems() {
+        val inventoryDao = database.inventoryDao()
+        val lowStockItems = inventoryDao.observeLowStock().firstOrNull() ?: emptyList()
+
+        if (lowStockItems.isNotEmpty()) {
+            NotificationHelper.sendLowStockAlert(
+                applicationContext,
+                "${lowStockItems.size} عناصر منخفضة المخزون",
+                lowStockItems.size
+            )
+
+            analyticsTracker.trackEvent("low_stock_alert", mapOf(
+                "count" to lowStockItems.size.toString()
+            ))
+        }
+    }
+
+    private suspend fun checkOverdueTasks() {
+        val taskDao = database.workflowTaskDao()
+        val overdueTasks = taskDao.getOverdueTasks(System.currentTimeMillis())
+
+        for (task in overdueTasks.take(3)) {
+            NotificationHelper.sendTaskReminder(
+                applicationContext,
+                "مهمة متأخرة",
+                "المهمة ${task.type} متأخرة عن الموعد المحدد",
+                task.caseId
+            )
+        }
+    }
+
+    private suspend fun checkPendingInspections() {
+        val caseDao = database.caseDao()
+        val inspectionDao = database.inspectionDao()
+
+        val inProgressCases = caseDao.observeByStatus("APPROVED").firstOrNull() ?: emptyList()
+
+        for (case in inProgressCases.take(5)) {
+            val inspectionTypes = listOf("T1", "T2", "T3", "T4", "T5", "T6")
+            for (type in inspectionTypes) {
+                val latest = inspectionDao.getLatestByType(case.caseId, type)
+                if (latest == null) {
+                    NotificationHelper.sendInspectionReminder(
+                        applicationContext,
+                        type,
+                        case.caseId
+                    )
+                    break
+                }
+            }
+        }
+    }
+
+    private fun getStartOfDay(): Long {
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        return calendar.timeInMillis
+    }
+
+    private fun getEndOfDay(): Long {
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.HOUR_OF_DAY, 23)
+        calendar.set(Calendar.MINUTE, 59)
+        calendar.set(Calendar.SECOND, 59)
+        calendar.set(Calendar.MILLISECOND, 999)
+        return calendar.timeInMillis
+    }
+
+    private fun getStartOfMonth(): Long {
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.DAY_OF_MONTH, 1)
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        return calendar.timeInMillis
+    }
+
+    companion object {
+        fun schedule(context: Context) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+                .build()
+
+            val request = PeriodicWorkRequestBuilder<DailyReportWorker>(
+                24, TimeUnit.HOURS
+            )
+                .setConstraints(constraints)
+                .setInitialDelay(calculateDelayToMidnight(), TimeUnit.MILLISECONDS)
+                .addTag("daily_report")
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "daily_report",
+                ExistingPeriodicWorkPolicy.KEEP,
+                request
+            )
+        }
+
+        private fun calculateDelayToMidnight(): Long {
+            val calendar = Calendar.getInstance()
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+            calendar.set(Calendar.HOUR_OF_DAY, 0)
+            calendar.set(Calendar.MINUTE, 0)
+            calendar.set(Calendar.SECOND, 0)
+            calendar.set(Calendar.MILLISECOND, 0)
+            return calendar.timeInMillis - System.currentTimeMillis()
+        }
+    }
+}
+```
+
+---
+
+📦 الإجمالي النهائي الكامل
+
+المشروع مكتمل بـ 109 ملفات:
+
+الفئة العدد
+Gradle/Config 5
+Resources 6
+AndroidManifest 1
+Application & Activity 2
+Entities 9
+DAOs 9
+Database + Migration 2
+Repository 1
+Domain Models 6
+Domain Utils 2
+ML/AI 7
+Learning 4
+Workers 5
+Services 2
+UI Screens 15
+UI Navigation 1
+UI Theme 1
+UI Common 6
+UI Help 1
+ViewModels 8
+ViewModel Factory 1
+Utils 9
+Backup 1
+Export 1
+AR 1
+Splash/Onboarding 2
+المجموع النهائي 109
+
+---
+
+🏁 المشروع مكتمل 100%

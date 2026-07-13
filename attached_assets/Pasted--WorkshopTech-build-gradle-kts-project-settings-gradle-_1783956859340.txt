@@ -1,0 +1,71 @@
+
+هيكل المشروع
+
+```
+WorkshopTech/
+├── build.gradle.kts (project)
+├── settings.gradle.kts
+├── gradle.properties
+├── app/
+│   ├── build.gradle.kts
+│   └── src/main/
+│       ├── AndroidManifest.xml
+│       ├── java/com/workshoptech/
+│       │   ├── WorkshopTechApp.kt
+│       │   ├── MainActivity.kt
+│       │   ├── AppContainer.kt
+│       │   ├── data/
+│       │   │   ├── entity/
+│       │   │   │   ├── CaseEntity.kt
+│       │   │   │   ├── CasePhotoEntity.kt
+│       │   │   │   ├── CustomerEntity.kt
+│       │   │   │   ├── DamageFindingEntity.kt
+│       │   │   │   ├── InspectionEntity.kt
+│       │   │   │   ├── AnalysisResultEntity.kt
+│       │   │   │   ├── WorkflowTaskEntity.kt
+│       │   │   │   ├── TechnicianEntity.kt
+│       │   │   │   └── InventoryEntity.kt
+│       │   │   ├── dao/
+│       │   │   │   ├── CaseDao.kt
+│       │   │   │   ├── CustomerDao.kt
+│       │   │   │   ├── PhotoDao.kt
+│       │   │   │   └── InspectionDao.kt
+│       │   │   ├── AppDatabase.kt
+│       │   │   └── repository/
+│       │   │       └── WorkshopRepository.kt
+│       │   ├── domain/
+│       │   │   ├── model/
+│       │   │   │   ├── PlateResult.kt
+│       │   │   │   ├── DamageReport.kt
+│       │   │   │   └── CountryConfig.kt
+│       │   │   └── util/
+│       │   │       ├── PlatePatterns.kt
+│       │   │       └── CountryDetector.kt
+│       │   ├── ml/
+│       │   │   ├── OcrEngine.kt
+│       │   │   └── DamageAnalyzer.kt
+│       │   ├── ui/
+│       │   │   ├── navigation/
+│       │   │   │   └── NavGraph.kt
+│       │   │   ├── theme/
+│       │   │   │   └── Theme.kt
+│       │   │   ├── dashboard/
+│       │   │   │   └── DashboardScreen.kt
+│       │   │   ├── cases/
+│       │   │   │   ├── CaseListScreen.kt
+│       │   │   │   ├── CreateCaseScreen.kt
+│       │   │   │   └── CaseDetailScreen.kt
+│       │   │   ├── camera/
+│       │   │   │   └── CameraScreen.kt
+│       │   │   ├── inspection/
+│       │   │   │   └── InspectionScreen.kt
+│       │   │   └── customers/
+│       │   │       └── CustomerScreen.kt
+│       │   └── viewmodel/
+│       │       ├── CaseListViewModel.kt
+│       │       ├── CreateCaseViewModel.kt
+│       │       └── CaseDetailViewModel.kt
+│       └── res/
+│           └── values/
+│               └── strings.xml
+```
