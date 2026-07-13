@@ -20,10 +20,11 @@ import com.workshoptech.data.migration.DatabaseMigrations
         InventoryEntity::class,
         AnalysisResultEntity::class
     ],
-    version = 3,
+    version = DatabaseMigrations.CURRENT_VERSION,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun caseDao(): CaseDao
     abstract fun customerDao(): CustomerDao
     abstract fun photoDao(): PhotoDao
@@ -31,25 +32,25 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun workflowTaskDao(): WorkflowTaskDao
     abstract fun technicianDao(): TechnicianDao
     abstract fun inventoryDao(): InventoryDao
+    abstract fun damageFindingDao(): DamageFindingDao
+    abstract fun analysisResultDao(): AnalysisResultDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        fun getInstance(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
+        fun getInstance(context: Context): AppDatabase =
+            INSTANCE ?: synchronized(this) {
                 INSTANCE ?: buildDatabase(context).also { INSTANCE = it }
             }
-        }
 
-        private fun buildDatabase(context: Context): AppDatabase {
-            return Room.databaseBuilder(
+        private fun buildDatabase(context: Context): AppDatabase =
+            Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 "workshop_tech.db"
             )
                 .addMigrations(*DatabaseMigrations.getAllMigrations())
                 .build()
-        }
     }
 }

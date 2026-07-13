@@ -1,0 +1,445 @@
+ممتاز. لنأخذ الفكرة إلى المرحلة التالية مباشرة (مستوى إنتاجي لورشة حقيقية) مع الحفاظ على شرط محلي أولاً + مجاني.
+
+التطوير سيكون في 5 محاور أساسية، كل محور يبني على MVP السابق:
+
+---
+
+المحور الأول: نظام ذكاء متعدد الطبقات (Multi-Layer AI Engine)
+
+بدلاً من نموذج واحد، نصنع Pipeline تحليل يمر على كل صورة:
+
+الطبقة 0: فلتر الجودة (قبل الحفظ)
+
+```kotlin
+// ml/QualityFilter.kt
+data class QualityResult(
+    val isBlurry: Boolean,
+    val brightnessScore: Float,  // 0.0 - 1.0
+    val hasGlare: Boolean,
+    val suggestions: List<String>  // "اقترب أكثر", "الإضاءة ضعيفة"
+)
+
+object QualityFilter {
+    fun analyze(bitmap: Bitmap): QualityResult {
+        // استخدام OpenCV أو مكتبة مخصصة خفيفة
+        // كشف blur عبر Laplacian variance
+        // كشف brightness عبر متوسط pixel values
+        // العودة بتوجيهات فورية للمستخدم
+    }
+}
+```
+
+في CameraScreen: قبل حفظ الصورة، مررها على هذا الفلتر. إذا فشلت، ارفضها فوراً وأعط توجيه.
+
+الطبقة 1: كشف منطقة اللوحة (Plate Detection)
+
+```kotlin
+// ml/PlateDetector.kt
+class PlateDetector(context: Context) {
+    private val model: Interpreter  // TFLite YOLO-nano مخصص
+
+    fun detectPlate(bitmap: Bitmap): Rect? {
+        // إرجاع bounding box للوحة
+        // إن لم يجد لوحة: يرجع null
+    }
+
+    fun cropPlate(bitmap: Bitmap, box: Rect): Bitmap {
+        // قص منطقة اللوحة فقط
+    }
+}
+```
+
+التدفق: صورة كاملة → اكتشاف مكان اللوحة → قصها → إرسال القصاصة فقط للـ OCR.
+
+الطبقة 2: OCR مزدوج (محلي + فلترة)
+
+```kotlin
+// ml/PlateOCR.kt
+data class PlateResult(
+    val text: String,
+    val confidence: Float,
+    val candidates: List<String>,  // بدائل محتملة
+    val country: String?,          // LY/EG تم تخمينها
+    val needsReview: Boolean       // true إذا الثقة منخفضة
+)
+
+class PlateOCR {
+    suspend fun readPlate(plateBitmap: Bitmap): PlateResult {
+        // 1. ML Kit OCR
+        val rawText = runOcr(plateBitmap)
+        
+        // 2. تنظيف وتطبيع
+        val cleaned = PlateNormalizer.clean(rawText)
+        
+        // 3. قواعد ليبيا/Mصر
+        val (country, candidates) = PlateMatcher.match(cleaned)
+        
+        // 4. تحديد إذا كانت تحتاج مراجعة بشرية
+        val needsReview = candidates.size > 1 || confidence < 0.8
+        
+        return PlateResult(cleaned, confidence, candidates, country, needsReview)
+    }
+}
+```
+
+الطبقة 3: تحليل الضرر (Damage Assessment)
+
+```kotlin
+// ml/DamageAnalyzer.kt
+data class DamageRegion(
+    val type: String,        // SCRATCH, DENT, CRACK, PAINT_PEEL
+    val severity: String,    // LOW, MEDIUM, HIGH
+    val boundingBox: RectF,  // normalized 0..1
+    val areaPercentage: Float,
+    val confidence: Float
+)
+
+data class DamageReport(
+    val regions: List<DamageRegion>,
+    val totalAffectedArea: Float,  // نسبة مئوية من مساحة السيارة
+    val estimatedSeverity: String, // إجمالي
+    val recommendedActions: List<String>  // "سمكري باب أمامي", "دهان رفرف خلفي"
+)
+
+class DamageAnalyzer(context: Context) {
+    private val detector: Interpreter  // TFLite YOLO مخصص للأضرار
+    private val classifier: Interpreter // تصنيف نوع الضرر
+
+    fun analyze(vehicleBitmap: Bitmap): DamageReport {
+        // 1. كشف مناطق الضرر (bounding boxes)
+        // 2. لكل منطقة: تصنيف النوع + تقدير الشدة
+        // 3. تجميع التقرير + توصيات
+    }
+}
+```
+
+---
+
+المحور الثاني: قاعدة بيانات متطورة (Production Schema)
+
+جداول جديدة تضاف إلى Room:
+
+```kotlin
+// جدول الكتالوج (لتخزين المركبات محلياً مع التحديث)
+@Entity(tableName = "vehicle_catalog")
+data class VehicleEntity(
+    @PrimaryKey val id: String,
+    val make: String,
+    val model: String,
+    val startYear: Int,
+    val endYear: Int,
+    val category: String  // SEDAN, SUV, TRUCK...
+)
+
+// جدول جلسات التصوير (Session)
+@Entity(tableName = "photo_sessions")
+data class PhotoSessionEntity(
+    @PrimaryKey val sessionId: String,
+    val caseId: String,
+    val type: String,        // INITIAL, PROGRESS, FINAL, DAMAGE
+    val startedAt: Long,
+    val completedAt: Long?,
+    val technicianId: String?
+)
+
+// جدول محسن لنتائج التحليل (يدعم طبقات متعددة)
+@Entity(tableName = "analysis_results")
+data class AnalysisResultEntity(
+    @PrimaryKey val resultId: String,
+    val photoId: String,
+    val layer: String,       // PLATE_DETECT, OCR, DAMAGE, QUALITY
+    val version: String,     // نسخة النموذج المستخدم
+    val isOnline: Boolean,   // هل النتيجة من Online model؟
+    val rawJson: String,     // النتائج كاملة كـ JSON
+    val confidence: Float,
+    val createdAt: Long
+)
+
+// جدول المراجعات البشرية (للتعلم الذاتي)
+@Entity(tableName = "human_reviews")
+data class HumanReviewEntity(
+    @PrimaryKey val reviewId: String,
+    val resultId: String,        // نتيجة الـ AI الأصلية
+    val correctedJson: String,   // التصحيح البشري كـ JSON
+    val reviewerId: String,
+    val reviewedAt: Long,
+    val feedback: String?        // "اللوحة كانت غير واضحة بسبب الإضاءة"
+)
+```
+
+---
+
+المحور الثالث: نظام التعلم الذاتي (Self-Learning System)
+
+هذا هو الجزء الأهم لتطوير الفكرة:
+
+آلية Human-in-the-Loop
+
+```kotlin
+// ml/SelfLearningEngine.kt
+class SelfLearningEngine(private val db: AppDatabase) {
+    
+    // جمع البيانات المصححة للتدريب المستقبلي
+    suspend fun collectTrainingData(): TrainingDataset {
+        val reviews = db.humanReviewDao().getAllUnprocessed()
+        
+        return reviews.map { review ->
+            val aiResult = db.analysisResultDao().getById(review.resultId)
+            val original = parseJson(aiResult.rawJson)
+            val corrected = parseJson(review.correctedJson)
+            
+            TrainingSample(
+                photoPath = getPhotoPath(aiResult.photoId),
+                aiPrediction = original,
+                humanCorrection = corrected,
+                errorType = calculateError(original, corrected)
+            )
+        }
+    }
+    
+    // تحليل أنماط الأخطاء لتحسين النماذج
+    fun analyzeErrorPatterns(): ErrorReport {
+        // مثلاً: "60% من الأخطاء في قراءة حرف 'ب' العربي"
+        // "أخطاء الضرر تزيد في الإضاءة المنخفضة"
+    }
+    
+    // تصدير بيانات التدريب (عند الطلب، للمطورين)
+    fun exportForRetraining(): File {
+        val dataset = collectTrainingData()
+        return TrainingDataExporter.toYOLOFormat(dataset)
+    }
+}
+```
+
+نموذج Active Learning
+
+```kotlin
+// يحدد الصور التي تحتاج مراجعة بشرية (بدلاً من مراجعة كل شيء)
+class ActiveLearningSelector {
+    fun shouldRequestHumanReview(result: AnalysisResultEntity): Boolean {
+        // طلب مراجعة إذا:
+        return result.confidence < 0.7 ||                         // ثقة منخفضة
+               result.layer == "DAMAGE" && result.isOnline.not() || // ضرر محلي (أقل دقة)
+               hasConflictingResults(result.photoId)                // تعارض بين الطبقات
+    }
+}
+```
+
+---
+
+المحور الرابع: نظام المهام والإشعارات (Workflow Engine)
+
+لتحويل التطبيق من "أداة تصوير" إلى "نظام إدارة ورشة":
+
+```kotlin
+// domain/WorkflowEngine.kt
+data class WorkflowTask(
+    val taskId: String,
+    val caseId: String,
+    val type: TaskType,
+    val assignedTo: String?,      // الفني المسؤول
+    val status: TaskStatus,
+    val deadline: Long?,
+    val priority: Priority
+)
+
+enum class TaskType {
+    PHOTO_INITIAL,       // تصوير أولي للسيارة
+    DAMAGE_ASSESSMENT,   // تقييم الضرر
+    REPAIR_APPROVAL,     // موافقة العميل على الإصلاح
+    REPAIR_IN_PROGRESS,  // إصلاح جاري
+    QUALITY_CHECK,       // فحص الجودة بعد الإصلاح
+    FINAL_PHOTO,         // تصوير نهائي
+    DELIVERY             // تسليم السيارة
+}
+
+class WorkflowEngine(private val repo: CaseRepository) {
+    
+    // إنشاء المهام تلقائياً عند إنشاء ملف
+    fun generateTasks(caseId: String): List<WorkflowTask> {
+        return listOf(
+            WorkflowTask(type = PHOTO_INITIAL, priority = HIGH),
+            WorkflowTask(type = DAMAGE_ASSESSMENT, priority = HIGH),
+            WorkflowTask(type = REPAIR_APPROVAL, priority = MEDIUM),
+            // ...إلخ
+        )
+    }
+    
+    // تحديث حالة الملف تلقائياً بناءً على تقدم المهام
+    fun updateCaseStatus(caseId: String) {
+        val tasks = getTasksForCase(caseId)
+        val allDone = tasks.all { it.status == TaskStatus.DONE }
+        if (allDone) repo.updateStatus(caseId, "READY_FOR_DELIVERY")
+    }
+    
+    // إشعارات للفنيين
+    fun getPendingTasks(technicianId: String): List<WorkflowTask>
+}
+```
+
+---
+
+المحور الخامس: تحسين واجهة المستخدم (Professional UI)
+
+شاشة لوحة القيادة (Dashboard)
+
+```kotlin
+@Composable
+fun DashboardScreen(vm: DashboardViewModel) {
+    // ملخص سريع:
+    // - سيارات اليوم: 5
+    // - قيد الإصلاح: 12
+    // - جاهزة للتسليم: 3
+    // - متوسط وقت الإصلاح: 3.2 يوم
+    
+    // رسم بياني: أكثر أنواع الأضرار شيوعاً
+    // قائمة: مهام عاجلة
+}
+```
+
+شاشة تحليل الضرر التفاعلية
+
+```kotlin
+@Composable
+fun DamageOverlayScreen(photoPath: String, damageReport: DamageReport) {
+    Box {
+        // عرض الصورة
+        AsyncImage(model = File(photoPath))
+        
+        // رسم مناطق الضرر على الصورة (Canvas)
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            damageReport.regions.forEach { region ->
+                // رسم bounding box مع لون حسب النوع:
+                // أحمر = خدش عميق، برتقالي = بعجة، أصفر = خفيف
+                drawRect(
+                    color = getDamageColor(region.type, region.severity),
+                    topLeft = Offset(region.boundingBox.left, region.boundingBox.top),
+                    size = Size(region.boundingBox.width, region.boundingBox.height)
+                )
+            }
+        }
+        
+        // بطاقة تفاصيل (أسفل الشاشة)
+        Card(Modifier.align(Alignment.BottomCenter)) {
+            Column {
+                Text("إجمالي الأضرار: ${damageReport.totalAffectedArea}%")
+                damageReport.recommendedActions.forEach { action ->
+                    Text("• $action")
+                }
+            }
+        }
+    }
+}
+```
+
+مقارنة قبل/بعد (Before/After Slider)
+
+```kotlin
+@Composable
+fun BeforeAfterComparison(beforePath: String, afterPath: String) {
+    var sliderPosition by remember { mutableStateOf(0.5f) }
+    
+    Box(Modifier.fillMaxWidth().aspectRatio(4f/3f)) {
+        // صورة "بعد" (كاملة)
+        AsyncImage(model = File(afterPath), contentScale = ContentScale.Crop)
+        
+        // صورة "قبل" (مقصوصة حسب slider)
+        ClipRect(left = 0f, right = sliderPosition) {
+            AsyncImage(model = File(beforePath), contentScale = ContentScale.Crop)
+        }
+        
+        // خط فاصل + مقبض للسحب
+        Slider(
+            value = sliderPosition,
+            onValueChange = { sliderPosition = it },
+            modifier = Modifier.fillMaxWidth().align(Alignment.Center)
+        )
+    }
+}
+```
+
+---
+
+المحور السادس (اختياري متقدم): وضع الأونلاين الهجين
+
+عند توفر الإنترنت، يضاف تحسين صامت:
+
+```kotlin
+// workers/OnlineEnhanceWorker.kt
+class OnlineEnhanceWorker(
+    context: Context,
+    params: WorkerParameters
+) : CoroutineWorker(context, params) {
+    
+    override suspend fun doWork(): Result {
+        val photoId = inputData.getString("photoId") ?: return Result.failure()
+        
+        // 1. تحميل الصورة
+        val photo = db.photoDao().getById(photoId)
+        
+        // 2. إرسال القصاصات فقط (للخصوصية والتكلفة)
+        val plateCrop = cropPlate(photo.imagePath)
+        val logoCrop = cropLogo(photo.imagePath)
+        
+        // 3. استدعاء خدمات متعددة بالتوازي
+        val results = coroutineScope {
+            val ocrDeferred = async { cloudVisionOcr(plateCrop) }        // Cloud Vision
+            val modelDeferred = async { geminiIdentifyModel(logoCrop) }   // Gemini
+            val damageDeferred = async { geminiAnalyzeDamage(photo) }     // Gemini
+            
+            OnlineResults(
+                ocr = ocrDeferred.await(),
+                model = modelDeferred.await(),
+                damage = damageDeferred.await()
+            )
+        }
+        
+        // 4. تحديث النتائج المحلية بصمت
+        updateLocalResults(photoId, results)
+        
+        // 5. تحديث قاعدة المعرفة للتعلم الذاتي
+        if (results.conflictsWith(photo.localResults)) {
+            flagForHumanReview(photoId)
+        }
+        
+        return Result.success()
+    }
+}
+```
+
+الجدولة التلقائية:
+
+```kotlin
+// في Application أو CaseRepository
+fun scheduleOnlineEnhancement(photoId: String) {
+    val constraints = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.UNMETERED) // WiFi فقط
+        .build()
+    
+    val request = OneTimeWorkRequestBuilder<OnlineEnhanceWorker>()
+        .setConstraints(constraints)
+        .setInputData(workDataOf("photoId" to photoId))
+        .addTag("online_enhance_$photoId")
+        .build()
+    
+    WorkManager.getInstance(context).enqueue(request)
+}
+```
+
+---
+
+ملخص: مستويات النضج (Maturity Levels)
+
+المستوى المميزات التكلفة
+MVP (ما بنيناه سابقاً) تصوير + OCR + أرشيف + ملفات مجاني 100%
+مستوى 1 (هذا التطوير) جودة + كشف لوحة + ضرر + مقارنات مجاني 100%
+مستوى 2 تعلم ذاتي + سير عمل + لوحة قيادة مجاني 100%
+مستوى 3 أونلاين هجين + Gemini/Cloud Vision مدفوع (حسب الاستخدام)
+
+---
+
+هل تريد أن نبدأ بتطبيق مستوى معين من هذه التطويرات؟ مثلاً:
+
+1. أبدأ بتطبيق نظام جودة الصورة + كشف اللوحة (الأعلى قيمة فورية).
+2. أم تريد نظام التعلم الذاتي (لتحسين الدقة مع الوقت).
+3. أم سير العمل الكامل (لإدارة الورشة).

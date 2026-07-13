@@ -1,0 +1,1570 @@
+كتابة تطبيق للاندرويد 
+تصوير ai للسيارات 
+يتم تحليل الصورة 
+بعد التصوير يتم عمل ارشيف الصور
+
+إليك تصورًا عمليًا لكتابة تطبيق أندرويد يقوم بـ تصوير سيارات باستخدام AI ثم تحليل الصورة وبعدها أرشفة الصور (محليًا أو سحابيًا). سأقسمه إلى (الوظائف → المعمارية → التقنيات المقترحة → خطوات التنفيذ → شكل الأرشيف).
+
+1) متطلبات الوظائف (Features)
+1. التصوير
+• فتح الكاميرا والتقاط صورة (أو فيديو/لقطات متتالية إن احتجت).
+• قص/تحسين بسيط (اختياري): تدوير، قص لوحة السيارة، تحسين الإضاءة.
+1. تحليل الصورة بالـ AI
+حسب الهدف، التحليل قد يكون واحدًا أو أكثر من التالي:
+• اكتشاف السيارة داخل الصورة (Car detection).
+• تصنيف نوع/موديل/شركة السيارة (Classification).
+• قراءة لوحة السيارة OCR (لو تحتاج رقم اللوحة).
+• تقييم جودة الصورة (هل واضحة؟ هل زاوية مناسبة؟).
+1. الأرشفة بعد التصوير
+• حفظ الصورة + نتائج التحليل (JSON/حقول) + بيانات إضافية (وقت، موقع GPS، المستخدم،…).
+• بحث/فلترة داخل الأرشيف (حسب التاريخ، النوع، نتيجة التحليل، اللوحة…).
+• تصدير/مشاركة (اختياري).
+• نسخ احتياطي سحابي (اختياري).
+
+2) المعمارية المقترحة (High-level Architecture)
+واجهة المستخدم (UI)
+• شاشة كاميرا
+• شاشة نتيجة التحليل (Overlay على الصورة + تفاصيل)
+• شاشة أرشيف (Grid/List + بحث + فلاتر)
+• شاشة تفاصيل عنصر بالأرشيف
+طبقة معالجة الصور
+• قبل التحليل: Resize/Normalize/Rotate
+• تشغيل نموذج AI:
+• On-device (على الهاتف) أو
+• On-server (خادم)
+طبقة البيانات (Data Layer)
+• تخزين الصور: ملفات (MediaStore أو مجلد خاص داخل التطبيق)
+• تخزين البيانات الوصفية/النتائج: قاعدة بيانات محلية (Room)
+• مزامنة/نسخ احتياطي: (Firebase / S3 / أي API)
+
+3) هل التحليل يكون على الجهاز أم على السيرفر؟
+خيار A: على الجهاز (On-device) – مناسب لو تريد سرعة وخصوصية
+• مزايا: يعمل بدون إنترنت، أسرع، خصوصية أعلى.
+• عيوب: قيود على حجم/تعقيد النموذج، اختلاف أداء الأجهزة.
+**تقنيات:**  
+• TensorFlow Lite (TFLite) أو Google ML Kit (لبعض المهام الجاهزة مثل OCR)
+خيار B: على السيرفر (On-server) – مناسب لو النموذج كبير أو تحتاج دقة أعلى
+• مزايا: نموذج أقوى، تحديثات سهلة.
+• عيوب: يحتاج إنترنت، تكلفة سيرفر، زمن رفع/تحميل.
+**تقنيات:**  
+• API (FastAPI/Node.js) + نموذج (YOLO/Detectron/CLIP/…)
+• رفع الصورة للسيرفر ثم يرجع لك النتائج
+
+4) التقنيات الموصى بها على أندرويد (اقتراح عملي)
+• Kotlin + Jetpack Compose للواجهة
+• CameraX للتصوير
+• WorkManager لتشغيل التحليل/الأرشفة في الخلفية (خصوصًا لو ترفع للسحابة)
+• Room Database لحفظ Metadata ونتائج التحليل
+• Coil لعرض الصور
+• TensorFlow Lite لو تحليل على الجهاز
+• (اختياري) ML Kit Text Recognition لقراءة اللوحات (OCR)
+
+5) تدفق العمل داخل التطبيق (Workflow)
+1. المستخدم يلتقط صورة عبر CameraX  
+2. التطبيق يحفظ الصورة “مبدئيًا” في التخزين (File)  
+3. يبدأ التحليل:
+• إمّا مباشرة بعد الالتقاط  
+• أو عبر Job في الخلفية (WorkManager)  
+1. تُنتج نتائج التحليل (مثلاً: bounding boxes + label + confidence)  
+2. تُحفظ النتائج في Room مع رابط الصورة + وقت الالتقاط + أي بيانات أخرى  
+3. تُعرض نتيجة التحليل للمستخدم + تضاف تلقائيًا للأرشيف
+
+6) تصميم الأرشيف (كيف نخزن؟)
+تخزين الملفات
+• مجلد منظم مثل:
+/Pictures/CarAI/YYYY/MM/DD/
+   IMG_20260626_194600.jpg
+   IMG_20260626_194600.json   (اختياري)
+قاعدة البيانات (Room) – مثال كيان (Entity)
+• id
+• imagePath (مسار الملف)
+• createdAt
+• locationLat / locationLng (اختياري)
+• carMake / carModel (لو التصنيف موجود)
+• plateText (لو OCR موجود)
+• analysisVersion (نسخة النموذج)
+• confidence
+• boxes (JSON) أو جدول منفصل للـ bounding boxes
+
+7) خطة تنفيذ على مراحل (MVP ثم توسعة)
+المرحلة 1 (MVP سريع)
+• CameraX تصوير
+• حفظ الصورة في التخزين
+• أرشيف يعرض الصور (بدون AI أو AI بسيط جدًا)
+المرحلة 2
+• إضافة AI على الجهاز (اكتشاف سيارة أو تصنيف)
+• حفظ النتائج في Room + شاشة تفاصيل
+المرحلة 3
+• OCR للوحة (لو مطلوب)
+• فلاتر وبحث داخل الأرشيف
+المرحلة 4 (اختياري)
+• مزامنة سحابية + حساب مستخدم + مشاركة
+
+8) أسئلة قصيرة لتحديد الحل المناسب (اختيار النموذج)
+لكي أحدد لك أفضل تصميم للنموذج والتحليل، أحتاج فقط 3 نقاط:
+1. ما الهدف من التحليل بالضبط: **اكتشاف سيارة؟ نوع/موديل؟ قراءة لوحة؟**  
+2. هل تريد أن يعمل بدون إنترنت؟  
+3. الأرشفة: محلية فقط أم محلية + سحابة؟
+إذا أجبت عن هذه الثلاثة، أكتب لك تصميمًا أدق (شاشات التطبيق + هيكلة قاعدة البيانات + اقتراح نموذج TFLite أو API سيرفر) بما يناسب استخدامك.
+
+لتنظيم ورشة سيارات 
+سمكري و الدهان 
+2 
+ممكن ذكاء اصطناعي فائق لتحليل الصور مثل gpt
+أو الافضل للصور ومجانا 
+3 
+تخزين محلي
+
+
+لتنظيم ورشة سيارات (سمكري + دهان) ومع شرطين: (2) AI “قوي” لتحليل الصور ويفضَّل مجاني + (3) تخزين محلي — الأفضل عمليًا هو حل “على الجهاز” (On‑device) باستخدام نماذج خفيفة (TFLite) + قواعد عمل واضحة داخل التطبيق.
+1) ما هو “الأفضل للصور ومجانا” على أندرويد (محليًا)؟
+الخيار الأقوى عمليًا (مجاني + محلي + سريع)
+TensorFlow Lite (TFLite) مع نموذج مخصص للسيارات/الأضرار.
+• تستخدمه لاكتشاف: السيارة/الجزء المتضرر/نوع الضرر (خدش، بعجة، كسر…).
+• مجاني بالكامل، لكن يحتاج إعداد نموذج (إما جاهز أو تدريب بسيط لاحقًا).
+نماذج جاهزة مناسبة كبداية:
+• YOLOv5n / YOLOv8n (نسخ “nano”) بعد تحويلها إلى TFLite: ممتازة للاكتشاف (Detection).
+• EfficientDet‑Lite: خيار جيد وخفيف للاكتشاف.
+• MobileNetV3: ممتاز للتصنيف (Classification) مثل “خدش/بعجة/دهان”.
+OCR لرقم اللوحة (لو تحتاجه)
+• Google ML Kit Text Recognition  
+يعمل محليًا في أغلب الحالات (مجاني). مناسب لاستخراج رقم اللوحة/نصوص على السيارة/أوامر مكتوبة على ورقة.
+“GPT للصور” محليًا ومجاني؟
+نماذج “Vision‑Language” مثل GPT‑4V عادة تحتاج سيرفر. محليًا على الهاتف ممكن لكن ثقيل وغالبًا أداءه ضعيف إلا على أجهزة قوية جدًا.
+• أمثلة مفتوحة المصدر: LLaVA / MobileVLM (لكن تشغيلها محليًا على أندرويد معقول فقط كتجربة، وليس كحل ورشة يعتمد عليه).
+الخلاصة: لو هدفك ورشة “تشخيص ضرر + أرشفة + تنظيم”، فـ Detection/Classification + OCR هو الأفضل عمليًا محليًا ومجانيًا.
+
+2) كيف نخلي التحليل “فائق” بدون تكلفة؟
+بدل الاعتماد على “وصف ذكي مثل شات”، اجعل “الذكاء” عبارة عن نتائج مفيدة للورشة:
+1. تحديد مكان الضرر على السيارة (Bounding boxes / أقنعة Segmentation إن تطورت لاحقًا)
+2. نوع الضرر: خدش/بعجة/تلف دهان/كسر…
+3. شدة الضرر: بسيط/متوسط/شديد (حتى لو كانت قواعد + تصنيف)
+4. قائمة إجراءات تلقائية للسمكري والدهان بناءً على النوع والشدة (Rules Engine بسيط)
+هذا يعطي قيمة “تشغيلية” للورشة أكثر من وصف لغوي طويل.
+
+3) تصميم التطبيق للورشة (مناسب للسمكري والدهان)
+شاشات أساسية
+1. استقبال سيارة / إنشاء ملف
+• رقم لوحة (يدوي أو OCR)
+• اسم العميل + هاتف
+• نوع السيارة/الموديل (يدوي كبداية)
+1. التصوير الموجّه
+• صور: أمام/خلف/يمين/يسار + قرب للضرر
+• التطبيق يرفض الصورة “غير واضحة” (blur check بسيط)
+1. نتيجة التحليل
+• يحدد مناطق الضرر على الصورة
+• يخرج: “نوع الضرر” + “شدة” + “القطعة المتضررة” (باب/رفرف/صدام…)
+1. أرشيف محلي
+• بحث باللوحة/العميل/التاريخ/نوع الضرر
+• فتح ملف السيارة: كل الصور + النتائج + ملاحظات الفني
+بيانات تحفظ مع كل صورة (مهم للأرشفة)
+• path للصورة
+• timestamp
+• plateText (إن وُجد)
+• damageType, severity, part
+• ملاحظات الفني + حالة الملف (جديد/قيد العمل/تم)
+
+4) التخزين المحلي (أفضل طريقة على أندرويد)
+• الصور: تُحفظ كملفات داخل مجلد التطبيق أو في  Pictures/WorkshopAI/... 
+• البيانات الوصفية والنتائج: Room Database
+• (اختياري) ضغط الصور للحجم المناسب: JPEG 85% + نسخة thumbnail للأرشيف
+
+5) توصية نهائية حسب شروطك
+• AI مجاني + محلي: TFLite (YOLO nano للاكتشاف) + MobileNet للتصنيف + ML Kit OCR (اختياري)
+• تنظيم الورشة: ملفات سيارات + حالات + أرشيف + بحث + تقارير بسيطة
+• بدون سحابة: كل شيء محلي، مع خيار “تصدير نسخة احتياطية” كملف ZIP على ذاكرة الهاتف لاحقًا.
+
+سؤال واحد فقط لتثبيت الاختيار (عشان أحدد النموذج المناسب)
+هل “تحليل الصور” المقصود عندك هو:
+1. تحديد مكان الضرر + نوعه (الأهم للسمكري/الدهان)  
+أم  
+1. قراءة لوحة السيارة  
+أم  
+1. الاثنين معًا؟
+قلّي أي خيار، وسأعطيك تصميم MVP محدد جدًا: (الجداول في Room + تدفق الشاشات + نوع النموذج المناسب وخطوات دمجه في CameraX).
+
+
+تمام — بما إنك تريد الاثنين معًا:  
+1. تحليل ضرر السيارة من الصور (سمكري/دهان)  
+2. **قراءة رقم اللوحة (OCR)**  
+وكل شيء محلي ومجاني قدر الإمكان، فهذا أفضل تصميم عملي (MVP) على أندرويد:
+
+1) خط المعالجة المقترح (Pipeline) بعد التصوير
+بعد التقاط الصورة (CameraX):
+1. تحسين/تهيئة الصورة (خفيف)
+• تصغير إلى حجم مناسب للنموذج (مثل 640×640 أو 320×320)
+• تصحيح دوران EXIF
+• (اختياري) فحص “Blur” بسيط: لو الصورة مهزوزة يطلب إعادة التصوير
+1. OCR للوحة (محلي)
+• تشغيل ML Kit Text Recognition
+• استخراج النص + فلترة النتائج بقواعد بسيطة (Regex) لتقريب شكل لوحة بلدك
+• حفظ  plateText  +  plateConfidence  (أو درجة تقريبية)
+1. AI ضرر السيارة (محلي)
+• نموذج كشف/تصنيف:
+• كشف مناطق الضرر (Bounding boxes)
+• نوع الضرر: Scratch / Dent / Paint damage / Crack …
+• شدة الضرر: Low / Med / High (حتى لو كانت قواعد بسيطة في البداية)
+• حفظ النتائج كقائمة عناصر (نوع + إحداثيات + ثقة)
+1. الأرشفة
+• حفظ الصورة كملف
+• حفظ النتائج في Room DB
+• إنشاء “ملف سيارة” Case وربط الصور به
+
+2) أفضل أدوات مجانية محليًا (Recommended Stack)
+OCR
+• Google ML Kit – Text Recognition
+• يعمل محليًا غالبًا، ممتاز كبداية لقراءة اللوحات.
+كشف/تحليل الضرر
+• TensorFlow Lite
+• نموذج كشف خفيف:
+• YOLOv8n / YOLOv5n (Nano) (بعد تحويله إلى TFLite) للاكتشاف
+• نموذج تصنيف خفيف (لو تحب فصل “الكشف” عن “نوع الضرر”):
+• MobileNetV3 / EfficientNet-Lite للتصنيف
+مهم جدًا: “تحليل الضرر” يحتاج عادة بيانات تدريب (صور أضرار) لكي يصير دقيق. كـ MVP تقدر تبدأ بـ:
+• نموذج عام يكتشف “منطقة غير طبيعية” (أقل دقة)، أو
+• تدريب بسيط لاحقًا على صور من الورشة (أفضل نتيجة).
+
+3) هيكل قاعدة البيانات (Room) للورشة (مناسب للتنظيم)
+جدول ملف السيارة (Case)
+•  caseId 
+•  plateText  (اللوحة)
+•  customerName ,  customerPhone  (اختياري)
+•  carMakeModel  (اختياري)
+•  status  (New / In Progress / Done)
+•  createdAt 
+جدول الصور (CasePhoto)
+•  photoId 
+•  caseId  (علاقة)
+•  imagePath 
+•  capturedAt 
+•  ocrText  (النص المستخرج)
+•  ocrRawJson  (اختياري للتتبع)
+•  notes  (ملاحظات الفني)
+جدول نتائج الضرر (DamageFinding)
+•  findingId 
+•  photoId 
+•  damageType  (Scratch/Dent/…)
+•  severity 
+•  confidence 
+•  boxLeft, boxTop, boxRight, boxBottom  (أو JSON)
+
+4) UI عملي للورشة (سريع ومفيد)
+1. إنشاء ملف جديد  
+• تصوير اللوحة (زر “قراءة اللوحة”) → يملأ الرقم تلقائيًا + تعديل يدوي
+1. تصوير الضرر
+• قوالب تصوير: (أمام/خلف/يمين/يسار) + (قرب للضرر)
+• بعد كل صورة يظهر Overlay بمناطق الضرر + “قبول/إعادة”
+1. الأرشيف
+• بحث سريع باللوحة
+• فلترة بالحالة (جديد/قيد العمل/تم)
+• فتح الملف: كل الصور + نتائج AI + ملاحظات
+
+5) ملاحظتان مهمتان لضمان نجاح “تحليل الضرر”
+1. ابدأ بقواعد تصوير ثابتة داخل التطبيق (توجيهات للمستخدم):
+• نفس المسافة تقريبًا، نفس الزاوية، إضاءة جيدة
+هذا وحده يرفع الدقة جدًا.
+1. تجميع بيانات من ورشتك (محليًا)
+• مع الوقت تقدر تعمل Dataset صغيرة (حتى 300–1000 صورة) وتدرب نموذج أدق.
+
+6) قراران فقط أحتاجهما منك لتثبيت التصميم النهائي
+1. هل تريد أن يكون “الملف” مبني على اللوحة فقط (أسهل) أم اللوحة + رقم أمر/فاتورة؟  
+2. ما لغة/شكل لوحة بلدك (ليبيا؟ مصر؟) لأن فلترة OCR تختلف (حروف عربية/لاتينية/أرقام فقط).
+إذا جاوبت هذين، أعطيك تصميم MVP نهائي واضح: تدفق الشاشات بالتفصيل + قواعد OCR للوحة + مواصفات النموذج (الحجم والدقة) + ترتيب تنفيذ أسبوع/أسبوعين.
+
+
+للوحة فقط أو ماركة السيارات أو الميداليات 
+ليبيا و مصر 
+ممكن مساعده للتحسين بواسطه 
+ذكاء اصطناعي فائق أون لاين لتحليل الصور مثل Gemini
+أو Google Cloud Vision / Azure Vision
+
+
+تقدر تعملها بطريقتين معًا (Hybrid): تشغيل محلي مجاني افتراضيًا + تحسين “فائق” أونلاين اختياري عندما تكون النتيجة غير واثقة أو المستخدم يطلب “تحليل متقدم”.
+سأرتب لك القرار والتصميم بما يناسب: لوحة فقط + (اختياري) ماركة السيارة + “الميداليات/الشعارات”، لليبيا ومصر.
+
+1) تعريف “الملف” (Case) في الورشة
+أنصح أن يكون مفتاح الملف الأساسي:
+• Plate (رقم اللوحة) + بلد اللوحة (Libya/Egypt)
+ثم خصائص اختيارية:
+• Make/Brand (تويوتا/هيونداي…)
+• Model (اختياري) لو تبيها لاحقًا
+• Badges/Emblems (مثلاً: شعار الشركة أو فئة السيارة إن هذا المقصود بالميداليات)
+سبب إضافة البلد: نفس الصورة قد تُقرأ بشكل مختلف، وقواعد التحقق تختلف بين ليبيا ومصر.
+
+2) قراءة اللوحات (Libya + Egypt): ما الذي ينجح عمليًا؟
+محلي (Offline) – الأساس
+• ML Kit Text Recognition ممتاز كبداية لاستخراج النصوص من منطقة اللوحة.
+• الأفضل من هذا: تعمل خطوة قبل OCR:
+1. اكتشاف مكان اللوحة (Plate detection) → قص اللوحة فقط (Crop)
+2. ثم OCR على القصاصة
+هذا يرفع الدقة جدًا مقارنة بعمل OCR على الصورة كاملة.
+**ملاحظة مهمة:**  
+ML Kit Text Recognition يقرأ النص، لكنه ليس “نظام لوحات” جاهز. لذلك تحتاج:
+• قواعد فلترة/تصحيح (Regex + تنظيف) لكل بلد
+• السماح للمستخدم بتعديل النتيجة سريعًا (Auto-fill + Edit)
+أونلاين (Ultra) – لتحسين الدقة
+هنا لديك 3 مستويات:
+1. Google Cloud Vision OCR / Document AI
+• قوي جدًا في OCR وتنسيق النصوص.
+• مناسب لو هدفك الأساسي “قراءة لوحة” بدقة أعلى من الجهاز.
+• لكن: ليس متخصص لوحات بشكل كامل؛ قد يحتاج فلترة/قص اللوحة أولاً.
+1. Azure Computer Vision OCR
+• مشابه من حيث الفكرة وقوي.
+1. Gemini (Vision)
+• ممتاز لو تريد “فهم” أوسع للصورة (مثلاً: “ما لون السيارة؟ هل يوجد ضرر؟ ما الذي يظهر؟”)
+• OCR ممكن، لكن غالبًا Cloud Vision/Azure OCR أكثر مباشرة وثباتًا لأرقام/حروف.
+**الخلاصة للوحة:**  
+• للأرقام والحروف فقط: Cloud Vision / Azure OCR غالبًا أفضل وأثبت.
+• للفهم العام أو استخراج “ماركة/شعار/وصف ضرر”: Gemini مفيد جدًا.
+
+3) “ماركة السيارة” و”الميداليات/الشعارات” (Badges/Emblems)
+محلي (Offline)
+• تصنيف صورة السيارة إلى Brand (Toyota/Hyundai/…): ممكن بـ TFLite MobileNet/EfficientNet.
+• التعرف على الشعار (logo/badge) يتطلب بيانات تدريب (صور شعارات على سيارات بزوايا مختلفة). ممكن لكنه مشروع تدريبي.
+أونلاين (Ultra)
+• Gemini ممتاز هنا: ترفع صورة (أو crop للشعار) وتسأله: “ما الشركة؟ ما الموديل المحتمل؟”
+• Google Cloud Vision – Logo Detection (ميزة موجودة في Vision API):
+• قوية للتعرف على الشعارات (لكن ليست مضمونة دائمًا مع الشعارات الصغيرة/المتسخة/زاوية سيئة).
+**الخلاصة للميداليات/الشعارات:**  
+• أفضل نتيجة بأقل مجهود عادة: قص الشعار → Logo Detection (Vision) أو Gemini.
+
+4) أفضل تصميم عملي: Local-first + Online boost
+القاعدة
+• التطبيق يعمل بالكامل محليًا (تخزين محلي + تحليل محلي).
+متى نستخدم الأونلاين؟
+• إذا ثقة OCR أقل من حد معين (مثلاً < 0.7)
+• أو فشل مطابقة قواعد ليبيا/مصر
+• أو المستخدم ضغط زر: “تحليل فائق”
+ما الذي نرسله للأونلاين؟
+لتقليل التكلفة والخصوصية:
+• لا ترسل الصورة كاملة دائمًا
+• أرسل Crop للوحة فقط لـ OCR
+• وأرسل Crop للشعار فقط لـ logo/brand
+وبذلك:
+• أسرع
+• أرخص
+• خصوصية أفضل
+
+5) ملاحظات الخصوصية والتكلفة (مهمة)
+• خدمات Google/Azure مدفوعة بعد حد مجاني (Free tier). لازم تحسبها على عدد الصور اليومي.
+• إذا الورشة كبيرة، الأفضل:
+• Online فقط “عند الحاجة”
+• Cache للنتائج محليًا (لا تعيد نفس الطلب مرتين)
+
+6) قرار سريع منك لتثبيت الاختيار
+1. هل تريد الأونلاين يكون اختياري بزر فقط، أم تلقائي عند فشل/ضعف النتيجة؟
+2. هل تقصد بـ “الميداليات” = شعارات الشركات (Toyota/…) أم علامات/ستيكرات/فئات (GL/GT… إلخ)؟
+إذا أجبت عن هذين، أعطيك “مخطط تنفيذ” محدد جدًا:  
+• ترتيب الشاشات  
+• متى نعمل Crop وكيف  
+• كيف نقرر Libya vs Egypt في قواعد اللوحات  
+• وأي API تختار لكل وظيفة (OCR vs Logo vs فهم عام).
+
+
+عند توافر اتصال انترنت يكون أون لاين تلقائيا 
+للتدريب والتعلم الذاتي والعميق 
+2
+موديل 
+تويوتا كورولا 2017 وهكذا 
+الذكاء الاصطناعي يكون متعددة الطبقات ويعمل في الخلفية 
+واكثر من نموذج مثل 
+الأداة المقترحة
+تحليل وشرح محتوى الصورGemini أو GPT-4o
+استخراج نصوص وبياناتGoogle Cloud Vision / Azure Vision
+تحليل أسلوب التصويرManus
+ممتاز — طلبك الآن صار واضح: نظام “متعدد الطبقات” يعمل محليًا دائمًا + يتحول أونلاين تلقائيًا عند توفر الإنترنت، ويشغّل عدة نماذج في الخلفية لاستخراج:
+• رقم اللوحة ونصوص أخرى
+• موديل/ماركة/سنة (مثل: Toyota Corolla 2017)
+• تحليل وشرح محتوى الصور (Gemini أو GPT‑4o)
+• تقييم/تحسين أسلوب التصوير (جودة، إضاءة، زاوية…)
+• (اختياري) أشياء جوية/خرائط (لكن هذا غالبًا غير مطلوب لورشة سيارات إلا لو عندك حالات تصوير من درون)
+سأعطيك تصميم عملي “Production‑ready” كمخطط.
+
+1) الفكرة الأساسية: Local-first + Online auto-upgrade
+القاعدة
+• كل صورة تُحفظ محليًا فورًا + تُنشأ لها “مهمة تحليل” في قاعدة البيانات.
+• تحليل محلي سريع يتم فورًا (أو خلال ثوانٍ) ليعطي نتيجة أولية ويملأ الأرشيف.
+عند توفر الإنترنت (تلقائي)
+• النظام يضع “مهام تحسين” Online (Enhancement jobs) تعمل في الخلفية:
+• OCR أقوى/أدق
+• “فهم” أعمق للصورة (وصف + استنتاج موديل)
+• تصحيح/تطبيع النتائج وربطها بقاعدة بيانات سيارات
+مبدأ مهم
+لا تجعل الأونلاين يمنع العمل. الأونلاين فقط:
+• يرفع الدقة
+• يضيف حقول جديدة
+• يصحح الأخطاء
+• ويحدّث نفس سجل الصورة/الملف
+
+2) طبقات الذكاء الاصطناعي (Multi-layer AI Stack)
+اعتبر كل صورة تمر عبر “Pipeline” من مراحل. كل مرحلة تنتج مخرجات محفوظة.
+Layer A — جودة الصورة + أسلوب التصوير (محلي)
+هدفها: منع صور سيئة من البداية.
+• كشف اهتزاز/Blur
+• كشف إضاءة ضعيفة
+• كشف قص سيئ (اللوحة مقصوصة/بعيدة)
+• إعطاء توجيه للمستخدم: “اقترب”، “إضاءة أفضل”، “خلّ اللوحة في المنتصف”
+تنفيذ محلي:
+• OpenCV / ML خفيف + قواعد heuristics
+• (لا تحتاج “Manus” تحديدًا؛ أي نظام تقييم جودة يعمل. لو تقصد بـ Manus منتج بعينه، عادة لا يوجد SDK قياسي له على الموبايل—فتعاملها كـ “Image QA module” عام.)
+Layer B — اكتشاف اللوحة وقصّها (محلي ثم أونلاين)
+• Plate detection model (TFLite YOLO nano) يطلع bounding box للوحة
+• Crop اللوحة → ثم OCR
+هذا هو أكبر عامل لتحسين دقة قراءة اللوحات.
+Layer C — OCR واستخراج البيانات
+محلي (افتراضي):
+• ML Kit Text Recognition على Crop اللوحة
+• فلترة ليبيا/مصر بقواعد (تنظيف + تطبيع أرقام عربية/لاتينية + استبعاد النصوص غير المحتملة)
+أونلاين (تحسين تلقائي عند توفر النت):
+• Google Cloud Vision OCR أو Azure OCR على Crop فقط (لتقليل التكلفة)
+• تعيد أفضل  plateText  + احتمالات (candidates) إن أمكن
+Layer D — الماركة/الموديل/السنة (Make/Model/Year)
+هذا أصعب جزء لأنه يتطلب “معرفة مركّبة”، وأفضل نتيجة غالبًا تكون هجين:
+محلي (سريع ومجاني كبداية):
+• Model تصنيف “Make” فقط (Toyota/Hyundai/…)
+• أو Top‑3 guesses
+هذا قابل للتنفيذ على الجهاز بسهولة.
+أونلاين (فائق):
+• Gemini أو GPT‑4o Vision لتحليل الصورة + يرجع:
+• Make
+• Model
+• Year range (تقريبي)
+• Confidence + سبب (features)
+لكن تحتاج “ضبط طلب” (prompt) صارم وتفادي الهلاوس:
+• اطلب JSON فقط
+• اطلب confidence
+• واطلب “unknown” إذا غير متأكد
+تحسين شديد الأهمية: اربط المخرجات بـ “قائمة سيارات” (Car taxonomy)
+• قاعدة بيانات داخلية: Toyota Corolla (2014–2019) … إلخ
+• عندما يرجع Gemini/GPT تخمين، تقوم أنت بعمل “Normalization” وتثبيت اسم قياسي.
+Layer E — تحليل الضرر (سمكري/دهان)
+• محلي: كشف مناطق ضرر (لو عندك نموذج) أو على الأقل تصنيف “هل يوجد ضرر واضح؟”
+• أونلاين: Gemini/GPT‑4o ممكن يعطي وصفًا ممتازًا (“خدش طويل على الباب الأيمن”) لكن لا تعتمد عليه وحده لتقدير تكلفة—اعتبره مساعد وصف/فرز.
+
+3) تشغيل في الخلفية على أندرويد (الطريقة الصحيحة)
+استخدم WorkManager لأنه:
+• يدعم Jobs مؤجلة
+• يشتغل عند توفر شروط (مثل NetworkType.CONNECTED)
+• يحافظ على المهام حتى بعد إعادة التشغيل
+طريقتان للمهام
+1. Immediate local analysis (بعد الالتقاط مباشرة)
+• Worker محلي: Plate detect → ML Kit OCR → Image quality → حفظ نتائج
+1. Deferred online enhancement (عند اتصال الإنترنت)
+• Worker أونلاين بشرط network connected:
+• Vision OCR (Crop اللوحة)
+• Gemini/GPT تحليل موديل
+• تحديث نفس السجل في DB
+
+4) “التعلم الذاتي والعميق” (Self-learning) بدون تعقيد قاتل
+في الورش، أفضل “تعلم ذاتي” عملي ليس تدريب موديل على الهاتف، بل:
+(أ) Human-in-the-loop labeling
+• عندما يقرأ OCR اللوحة/الموديل ويخطئ: الفني يصححها
+• تحفظ “التصحيح” كـ Label
+• تتجمع لديك بيانات ممتازة للتطوير لاحقًا
+(ب) Active learning
+• فقط الحالات “ضعيفة الثقة” تُرسل للأونلاين
+• أو تُطلب مراجعتها يدويًا
+هذا يقلل التكلفة ويرفع جودة بيانات التدريب.
+(ج) تدريب مركزي (اختياري مستقبلًا)
+• تجمع البيانات (محليًا) ثم تصدّرها كحزمة تدريب (مع موافقة)
+• تدرّب نموذج أحدث على جهازك/سيرفر
+• ثم تنشر TFLite جديد للتطبيق
+هذا هو “التعلم العميق” الواقعي.
+
+5) اختيار الأدوات التي ذكرتها: أين تناسب؟
+• Gemini أو GPT‑4o: أفضل لـ شرح وفهم الصورة + تخمين الموديل/السنة + وصف الضرر (Online).
+• Google Cloud Vision / Azure Vision: أفضل لـ OCR واستخراج نصوص (Online).
+• Manus (تحليل أسلوب التصوير): اعتبرها “وحدة تقييم جودة تصوير”؛ إن لم يتوفر SDK واضح، نفّذها محليًا بقواعد + OpenCV/ML خفيف.
+• Flypix / ArcGIS (صور جوية): غالبًا غير مطلوبة لورشة سمكري/دهان إلا إذا عندك سيناريو درون/موقع/خرائط. لو هدفك فقط سيارات داخل الورشة، تجاهلها في الـ MVP.
+
+6) مخرجات موحّدة (مهم جدًا)
+اجعل كل النماذج ترجع نفس “شكل نتائج” موحد داخل التطبيق (Schema)، مثل:
+•  plate : { text, country, confidence, source(local/vision) }
+•  vehicle : { make, model, year, confidence, source(gemini/gpt/local) }
+•  damage : [ { type, severity, box, confidence, source } ]
+•  photoQuality : { blurScore, lightingScore, suggestions[] }
+وبهذا تستطيع تحديث النتائج تدريجيًا بدون فوضى.
+
+7) سؤالان حاسمين قبل تحديد الـ API بدقة
+1. هل تريد أن تعمل الخدمات الأونلاين عبر حسابك أنت (API key داخل التطبيق) أم عبر سيرفر وسيط؟
+• وضع API keys داخل التطبيق خطر (سهولة استخراجها).
+• الأفضل إنتاجيًا: سيرفر وسيط (حتى لو بسيط جدًا) لحماية المفاتيح وتحديد سقف الاستهلاك.
+2. هل تريد “الموديل” يكون إجباري لكل ملف، أم “اختياري إذا أمكن” مع خيار تعديل يدوي؟
+• هذا يؤثر على تصميم الواجهة والتدقيق.
+إذا تجاوب على هذين، أكتب لك تصميم MVP نهائي كقائمة مهام تنفيذ (أسبوع/أسبوعين) مع ترتيب الـ Workers وقواعد ليبيا/مصر للوحة وتدفق البيانات في Room.
+
+
+الأسهل والاسرع والافضل للتحليل ومجانا 
+اجباري لكل ملف مع خيار تعديل يدوي
+
+الأسهل والأسرع و”الأفضل عمليًا” مع شرط مجاني هو:
+1. **كل شيء محلي Offline افتراضيًا (مجانًا)**  
+2. بدون أي مفاتيح API ولا سيرفر  
+3. الموديل “إجباري” لكل ملف لكن يتم إدخاله/تأكيده يدويًا لأن التعرف الآلي على موديل + سنة بدقة عالية “مجاني وموثوق” صعب بدون خدمات مدفوعة أو تدريب بيانات كبير.
+أعطيك الآن وصفة MVP واضحة تحقق طلبك.
+
+1) ما الذي سيكون “مجاني + سريع + أفضل”؟
+A) لوحة السيارة (إجباري – استخراج تلقائي + تعديل يدوي)
+• CameraX للتصوير
+• كشف اللوحة + قصّها (اختياري في الـ MVP لو تريد سرعة تنفيذ أعلى)
+• الأسرع للتنفيذ: ابدأ بدون كشف لوحة، اعمل OCR على الصورة/جزء منها
+• الأفضل للدقة لاحقًا: أضف Plate detector TFLite لقص اللوحة
+• ML Kit Text Recognition (Offline) لقراءة النص
+• ثم شاشة تأكيد:  
+رقم اللوحة المقترح + زر تعديل سريع
+هذا مجاني بالكامل ويعطي نتيجة جيدة في الورشة مع إضاءة جيدة.
+B) موديل السيارة (إجباري لكل ملف – لكن “مصدره يدوي” في الـ MVP)
+• عند إنشاء الملف: حقل إلزامي Make/Model/Year مثل: Toyota Corolla 2017.
+• التطبيق يمكنه اقتراح “ماركة” فقط لاحقًا (TFLite تصنيف بسيط)، لكن:
+• جعل “الموديل والسنة” إجباريين بالذكاء الاصطناعي فقط سيعمل بشكل متذبذب ويحتاج خدمات مدفوعة غالبًا.
+• الحل الأفضل تنظيميًا:  
+إجباري + قابل للتعديل + (اختياري) “اقتراحات” تظهر تحت الحقل وليس اعتمادًا عليها.
+
+2) UX سريع جدًا (يقفل الملف بدون تعب)
+شاشة “ملف جديد”
+حقول (إجباري):
+1. Plate (يتعبّى تلقائيًا من OCR + تعديل يدوي)
+2. Country (ليبيا/مصر) زر اختيار سريع
+3. Vehicle Model (نص إجباري) + اقتراحات جاهزة
+اقتراحات جاهزة لتسريع الإدخال:
+• Dropdown للماركة (Toyota/Hyundai/Kia…)
+• ثم Dropdown للموديل (Corolla/Elantra/…)
+• ثم سنة (2010–2026)
+هذا أسرع من الاعتماد على AI لتخمين الموديل.
+
+3) التخزين المحلي (ممتاز للأرشفة)
+• صور في مجلد منظم
+• بيانات في Room
+• البحث يكون بـ:
+• اللوحة
+• الموديل
+• التاريخ
+• الحالة (جديد/قيد العمل/تم)
+
+4) لماذا لا أنصح بـ “أونلاين تلقائي مجاني”؟
+• Gemini / Cloud Vision / Azure: ليست مجانية فعليًا على المدى الطويل (حتى لو فيها Free tier).
+• وضع مفاتيح API داخل التطبيق خطر ويمكن سرقتها.
+• “موديل + سنة” من الصورة بدقة عالية يحتاج:
+• خدمة قوية (غالبًا مدفوعة)
+• أو تدريب بيانات كبير (مشروع مستقل)
+لذلك: إذا هدفك “الأسرع والأضمن” للورشة الآن → Offline + إدخال موديل إلزامي يدوي هو الأفضل.
+
+5) إن أردت إضافة AI لاحقًا بدون تعقيد (اختياري)
+بعد ما ينجح الـ MVP:
+• إضافة “اقتراح ماركة” محليًا بـ TFLite (سريع)
+• أو “تحليل أونلاين تلقائي” لكن عبر سيرفر وسيط لحماية المفاتيح وتحديد الاستخدام (هذا ليس مجاني تمامًا)
+
+قرار نهائي للتنفيذ السريع (أقترحه)
+الإصدار الأول خلال وقت قصير:
+• OCR محلي للوحة + تأكيد/تعديل
+• موديل/سنة إدخال يدوي إلزامي بقوائم جاهزة
+• أرشيف محلي + بحث
+إذا تحب، قلّي: هل تريد إدخال الموديل يكون نص حر فقط، أم قوائم (Make ثم Model ثم Year)؟
+
+الأفضل (من ناحية السرعة والدقة والتنظيم) هو قوائم مُنظَّمة (Make → Model → Year) مع خانة بحث + خيار نص حر كخطة بديلة إذا لم تجد موديلًا.
+ما سأضيفه في تصميم التطبيق (Best option)
+1) إدخال السيارة (إجباري) — UI سريع جدًا
+• بلد اللوحة: (ليبيا / مصر)
+• رقم اللوحة: يتعبّى من OCR + زر “تعديل”
+• Make (الشركة): قائمة + بحث
+• Model (الموديل): قائمة تعتمد على الـ Make + بحث
+• Year (السنة): قائمة (مثلاً 1995–2026)
+• زر “حفظ الملف”
+ميزة مهمة: لو لم يجد المستخدم موديلًا:
+• خيار “موديل غير موجود؟ اكتب يدويًا” (نص حر)
+2) اقتراحات تلقائية (بدون خدمات مدفوعة)
+• OCR للوحة محليًا (ML Kit) + تأكيد/تصحيح
+• (اختياري لاحقًا) اقتراح “Make” فقط من الصورة محليًا (TFLite)، لكن لا نجعله إلزاميًا لو أخطأ.
+3) قاعدة بيانات سيارات محلية (Offline Car Catalog)
+• ملف JSON/SQLite داخل التطبيق يحتوي:
+• Makes (Toyota, Hyundai…)
+• Models لكل Make (Corolla, Camry…)
+• Years المتاحة (أو نطاقات)
+• قابلة للتحديث لاحقًا (لكن حتى بدون تحديث ستخدمك جيدًا)
+4) التوحيد القياسي (Normalization)
+حتى لو كتب المستخدم يدويًا:
+• التطبيق يحفظ قيمة قياسية (مثلاً:  TOYOTA_COROLLA ) + عرض عربي/إنجليزي
+وهذا يجعل البحث والأرشفة دقيقة.
+
+لماذا هذا “الأفضل”؟
+• أسرع من النص الحر وحده (لأنك تختار بدل الكتابة)
+• يقلل الأخطاء الإملائية وتعدد الصيغ (كورولا/Corolla…)
+• يجعل البحث والإحصائيات وتقارير الورشة سهلة لاحقًا
+• مجاني 100% ومحلي
+إذا تريد، أعطيك شكل الجداول المقترح في Room + مثال لهيكل JSON للماركات/الموديلات، بنفس أسلوب بسيط يناسب MVP.
+
+تمام. هذا تصميم الجداول في Room + مثال JSON لكتالوج الماركات/الموديلات + طريقة ربطهم في واجهة (Make → Model → Year) مع خيار “نص حر”.
+
+1) تصميم قاعدة البيانات (Room)
+A) جدول ملفات السيارات (Case)
+@Entity(
+  tableName = "cases",
+  indices = [
+    Index(value = ["plateText", "plateCountry"]),
+    Index(value = ["vehicleMakeId", "vehicleModelId", "vehicleYear"]),
+    Index(value = ["status", "createdAt"])
+  ]
+)
+data class CaseEntity(
+  @PrimaryKey val caseId: String,                 // UUID
+  val plateCountry: String,                       // "LY" or "EG"
+  val plateText: String,                          // normalized
+  val plateTextRaw: String?,                      // OCR raw before cleanup (optional)
+
+  val vehicleMakeId: String?,                     // e.g. "toyota"
+  val vehicleModelId: String?,                    // e.g. "corolla"
+  val vehicleYear: Int?,                          // e.g. 2017
+
+  val vehicleFreeText: String?,                   // fallback text: "Toyota Corolla 2017" لو لم يوجد بالكتالوج
+
+  val status: String,                             // "NEW" | "IN_PROGRESS" | "DONE"
+  val createdAt: Long,                            // epoch millis
+  val updatedAt: Long
+)
+قاعدة إلزامية في التطبيق: لا تسمح بحفظ Case إلا إذا كان:
+•  plateText  موجود  
+• و(إما  vehicleMakeId+vehicleModelId+vehicleYear  مكتملة) أو  vehicleFreeText  مكتوب
+
+B) جدول الصور المرتبطة بالملف (CasePhoto)
+@Entity(
+  tableName = "case_photos",
+  foreignKeys = [
+    ForeignKey(
+      entity = CaseEntity::class,
+      parentColumns = ["caseId"],
+      childColumns = ["caseId"],
+      onDelete = ForeignKey.CASCADE
+    )
+  ],
+  indices = [Index("caseId"), Index("capturedAt")]
+)
+data class CasePhotoEntity(
+  @PrimaryKey val photoId: String,                // UUID
+  val caseId: String,
+
+  val imagePath: String,                          // path in local storage
+  val thumbnailPath: String?,                     // optional
+  val capturedAt: Long,
+
+  val ocrText: String?,                           // plate OCR result (optional per photo)
+  val ocrConfidence: Float?,                      // optional
+  val notes: String?
+)
+
+C) جدول نتائج “الضرر” (اختياري للـ MVP، جاهز للتوسع)
+@Entity(
+  tableName = "damage_findings",
+  foreignKeys = [
+    ForeignKey(
+      entity = CasePhotoEntity::class,
+      parentColumns = ["photoId"],
+      childColumns = ["photoId"],
+      onDelete = ForeignKey.CASCADE
+    )
+  ],
+  indices = [Index("photoId")]
+)
+data class DamageFindingEntity(
+  @PrimaryKey val findingId: String,              // UUID
+  val photoId: String,
+
+  val damageType: String,                         // "SCRATCH" | "DENT" | ...
+  val severity: String,                           // "LOW" | "MED" | "HIGH"
+  val confidence: Float?,
+
+  // Bounding box normalized 0..1 for portability
+  val left: Float,
+  val top: Float,
+  val right: Float,
+  val bottom: Float
+)
+
+2) كتالوج الماركات/الموديلات: JSON محلي (Offline)
+ضعه كملف داخل  assets/vehicle_catalog.json .
+مثال بسيط (قابل للتوسع)
+{
+  "version": 1,
+  "makes": [
+    {
+      "id": "toyota",
+      "nameAr": "تويوتا",
+      "nameEn": "Toyota",
+      "models": [
+        { "id": "corolla", "nameAr": "كورولا", "nameEn": "Corolla", "years": { "min": 1990, "max": 2026 } },
+        { "id": "camry",   "nameAr": "كامري",  "nameEn": "Camry",   "years": { "min": 1995, "max": 2026 } }
+      ]
+    },
+    {
+      "id": "hyundai",
+      "nameAr": "هيونداي",
+      "nameEn": "Hyundai",
+      "models": [
+        { "id": "elantra", "nameAr": "إلنترا", "nameEn": "Elantra", "years": { "min": 2000, "max": 2026 } },
+        { "id": "accent",  "nameAr": "أكسنت",  "nameEn": "Accent",  "years": { "min": 1995, "max": 2026 } }
+      ]
+    }
+  ]
+}
+لماذا  id  مهم؟
+• لتوحيد البيانات في DB (بدون أخطاء كتابة)
+• للبحث والتقارير لاحقًا
+
+3) طريقة عرض الاختيار (Make → Model → Year) في الواجهة
+قواعد الواجهة
+1. اختيار Make يفتح/يفلتر قائمة Model
+2. اختيار Model يحدد نطاق السنوات المتاحة
+3. Year قائمة أو Picker
+4. زر “غير موجود؟ اكتب يدويًا” يظهر دائمًا كخيار fallback
+منطق الإلزام
+• إذا المستخدم اختار من القوائم: احفظ  makeId, modelId, year 
+• إذا اختار نص حر: احفظ  vehicleFreeText  وخلّي  makeId/modelId/year  null
+
+4) تطبيع رقم اللوحة (Normalization) لليبيا ومصر (مبدأ MVP)
+لأنك ليبيا + مصر، خليك عملي في الإصدار الأول:
+• خزّن:
+•  plateTextRaw  (كما خرج من OCR)
+•  plateText  (مُنظّم للبحث)
+تنظيف بسيط مقترح:
+• إزالة المسافات والرموز الغريبة
+• توحيد الأرقام العربية/اللاتينية (٠١٢… → 012…)
+• تحويل لحروف كبيرة إن كانت لاتينية
+• ثم المستخدم يؤكد/يعدل
+تفاصيل نمط اللوحات (حروف/أرقام وترتيبها) تختلف حسب نوع اللوحة والمدينة—لذلك في MVP لا تُقفل بقواعد صارمة جدًا؛ خليها “تنظيف + تأكيد”.
+
+5) استعلامات البحث (Examples)
+• البحث السريع:  plateText LIKE %query% 
+• فلترة بالموديل:  vehicleMakeId = ? AND vehicleModelId = ? AND vehicleYear = ? 
+• تقارير: عدد الملفات حسب الحالة/الموديل/التاريخ
+
+إذا تريد الخطوة التالية مباشرة: أعطيك تصميم DAOs (CaseDao/PhotoDao) + نموذج “Create Case” flow (مع حفظ الصور في مجلد مرتب) بصيغة كود Kotlin مختصر.
+
+تمام — نعتمد Jetpack Compose. هذا مخطط تنفيذ عملي (Kotlin + Compose) لتطبيق الورشة حيث كل سيارة لها ملف + تصوير + OCR للوحة + أرشفة محلية.
+1) هيكل المشروع (Packages) المقترح
+•  ui/  (Compose screens + components)
+•  data/  (Room entities/dao/database)
+•  domain/  (use-cases + models)
+•  camera/  (CameraX + image saving)
+•  ml/  (ML Kit OCR + (لاحقًا) TFLite)
+•  workers/  (WorkManager tasks)
+•  util/  (normalization, file paths, etc.)
+2) Dependencies الأساسية (Gradle)
+• Compose BOM + Material3
+• Navigation-Compose
+• Room (ksp)
+• CameraX
+• WorkManager
+• ML Kit Text Recognition
+• Coil-Compose لعرض الصور
+(إذا تريد، أعطيك  build.gradle.kts  جاهز كامل بنسخ dependencies)
+3) شاشات Compose (MVP)
+A) CaseListScreen (قائمة ملفات السيارات)
+• Search by plate
+• زر “+ ملف جديد”
+B) CreateCaseScreen (إنشاء ملف)
+• اختيار البلد: ليبيا/مصر
+• زر “التقاط لوحة” (يفتح CameraScreen بوضع Plate)
+• نتيجة OCR تظهر في TextField قابل للتعديل
+• اختيار Make → Model → Year (إجباري)
+• زر “حفظ”
+C) CaseDetailScreen (ملف السيارة)
+• بيانات اللوحة + السيارة + الحالة
+• زر “إضافة صور”
+• Grid صور (قبل/بعد/تفاصيل)
+• فتح صورة + ملاحظات
+D) CameraScreen (CameraX داخل Compose)
+• Preview + زر Capture
+• يحفظ الصورة داخل مجلد  caseId 
+• يرجع  imagePath  للشاشة السابقة
+4) Navigation-Compose (Routes)
+•  cases  (list)
+•  cases/new 
+•  cases/{caseId} 
+•  camera/{caseId}?mode=plate|general 
+5) ViewModels (State واضح)
+•  CaseListViewModel  (يعرض الملفات + البحث)
+•  CreateCaseViewModel  (يمسك plate + vehicle selection + validation)
+•  CaseDetailViewModel  (تحميل الملف + الصور)
+•  CameraViewModel  (التقاط/حفظ + إرسال النتيجة)
+6) تدفق “التقاط لوحة” (Compose UX سريع)
+1. من CreateCaseScreen → زر “التقاط لوحة”
+2. CameraScreen يلتقط الصورة
+3. بعد الحفظ: شغّل OCR محليًا (ML Kit) على الصورة أو crop بسيط
+4. ارجع للنموذج:
+• يملأ  plateText 
+• المستخدم يراجع ويعدل
+5. لا يسمح بالحفظ بدون Plate + Vehicle (Make/Model/Year أو نص حر fallback)
+7) مثال Compose مختصر (شكل عام)
+@Composable
+fun CreateCaseScreen(vm: CreateCaseViewModel, onOpenCamera: (mode: String) -> Unit) {
+  val state by vm.state.collectAsState()
+
+  Column(Modifier.padding(16.dp)) {
+    CountryPicker(
+      selected = state.country,
+      onSelect = vm::setCountry
+    )
+
+    Row {
+      OutlinedTextField(
+        value = state.plateText,
+        onValueChange = vm::setPlateText,
+        label = { Text("رقم اللوحة") },
+        modifier = Modifier.weight(1f)
+      )
+      Spacer(Modifier.width(8.dp))
+      Button(onClick = { onOpenCamera("plate") }) { Text("تصوير اللوحة") }
+    }
+
+    MakeModelYearPicker(
+      catalog = state.catalog,
+      makeId = state.makeId,
+      modelId = state.modelId,
+      year = state.year,
+      onMake = vm::setMake,
+      onModel = vm::setModel,
+      onYear = vm::setYear,
+      onFallbackText = vm::setVehicleFreeText
+    )
+
+    Spacer(Modifier.height(12.dp))
+    Button(
+      onClick = vm::saveCase,
+      enabled = state.canSave
+    ) { Text("حفظ الملف") }
+  }
+}
+8) “الأفضل” في Compose لهذه الحالة
+• استخدم LazyColumn/LazyVerticalGrid للأرشيف (سريع)
+• استخدم StateFlow + collectAsState()
+• استخدم single source of truth في Room + Flow للاستعلامات
+• تخزين الصور ضمن مجلدات  caseId  (كل سيارة مجلد مستقل)
+إذا تريد الخطوة التالية: أعطيك قالب مشروع جاهز (ملفات أساسية: Room entities/dao/db + Navigation + 4 screens + CameraX bridge ل Compose + ML Kit OCR function) بحيث تبدأ تكتب مباشرة.
+
+
+أكيد — هذا قالب مشروع جاهز (Skeleton) تقدر تنسخه كما هو وتبدأ مباشرة: Kotlin + Jetpack Compose + Navigation + Room + CameraX + ML Kit OCR + تخزين محلي منظّم “كل سيارة لها ملف”.
+ملاحظة: هذا قالب MVP. ركّبه أولًا، وبعد ما يشتغل نزيد: كشف اللوحة (TFLite) + تحليل ضرر… إلخ.
+
+1) إعداد Gradle (Module: app) —  build.gradle.kts 
+ضع/راجع أهم النقاط (اختصرته على الأساسيات):
+plugins {
+  id("com.android.application")
+  kotlin("android")
+  id("com.google.devtools.ksp")
+}
+
+android {
+  namespace = "com.example.workshopai"
+  compileSdk = 35
+
+  defaultConfig {
+    applicationId = "com.example.workshopai"
+    minSdk = 26
+    targetSdk = 35
+    versionCode = 1
+    versionName = "1.0"
+  }
+
+  buildFeatures { compose = true }
+  composeOptions { kotlinCompilerExtensionVersion = "1.5.15" } // عدّل حسب إصدار Compose لديك
+}
+
+dependencies {
+  // Compose
+  val composeBom = platform("androidx.compose:compose-bom:2025.01.00")
+  implementation(composeBom)
+  androidTestImplementation(composeBom)
+  implementation("androidx.compose.material3:material3")
+  implementation("androidx.compose.ui:ui")
+  implementation("androidx.compose.ui:ui-tooling-preview")
+  debugImplementation("androidx.compose.ui:ui-tooling")
+
+  // Activity + Navigation
+  implementation("androidx.activity:activity-compose:1.10.1")
+  implementation("androidx.navigation:navigation-compose:2.9.0")
+
+  // Lifecycle / ViewModel
+  implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
+  implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
+
+  // Room (KSP)
+  implementation("androidx.room:room-runtime:2.7.0")
+  implementation("androidx.room:room-ktx:2.7.0")
+  ksp("androidx.room:room-compiler:2.7.0")
+
+  // WorkManager
+  implementation("androidx.work:work-runtime-ktx:2.10.0")
+
+  // CameraX
+  implementation("androidx.camera:camera-core:1.4.2")
+  implementation("androidx.camera:camera-camera2:1.4.2")
+  implementation("androidx.camera:camera-lifecycle:1.4.2")
+  implementation("androidx.camera:camera-view:1.4.2")
+
+  // ML Kit OCR (Text Recognition)
+  implementation("com.google.mlkit:text-recognition:16.0.1")
+
+  // Coil (Compose images)
+  implementation("io.coil-kt:coil-compose:2.7.0")
+}
+
+2) AndroidManifest — صلاحيات الكاميرا
+<uses-permission android:name="android.permission.CAMERA" />
+
+<application ...>
+  ...
+</application>
+
+3) Room: Entities + DAO + DB
+ data/entities.kt 
+package com.example.workshopai.data
+
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
+
+@Entity(
+  tableName = "cases",
+  indices = [
+    Index(value = ["plateText", "plateCountry"]),
+    Index(value = ["status", "createdAt"])
+  ]
+)
+data class CaseEntity(
+  @PrimaryKey val caseId: String,
+  val plateCountry: String,   // "LY" or "EG"
+  val plateText: String,
+  val plateTextRaw: String?,
+
+  val vehicleMakeId: String?,
+  val vehicleModelId: String?,
+  val vehicleYear: Int?,
+  val vehicleFreeText: String?,
+
+  val status: String,         // "NEW"|"IN_PROGRESS"|"DONE"
+  val createdAt: Long,
+  val updatedAt: Long
+)
+
+@Entity(
+  tableName = "case_photos",
+  indices = [Index("caseId"), Index("capturedAt")]
+)
+data class CasePhotoEntity(
+  @PrimaryKey val photoId: String,
+  val caseId: String,
+
+  val imagePath: String,
+  val thumbnailPath: String?,
+  val capturedAt: Long,
+
+  val ocrText: String?,
+  val ocrConfidence: Float?,
+  val notes: String?
+)
+ data/dao.kt 
+package com.example.workshopai.data
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface CaseDao {
+  @Insert(onConflict = OnConflictStrategy.REPLACE)
+  suspend fun upsert(case: CaseEntity)
+
+  @Query("SELECT * FROM cases ORDER BY updatedAt DESC")
+  fun observeAll(): Flow<List<CaseEntity>>
+
+  @Query("""
+    SELECT * FROM cases
+    WHERE plateText LIKE '%' || :q || '%'
+    ORDER BY updatedAt DESC
+  """)
+  fun search(q: String): Flow<List<CaseEntity>>
+
+  @Query("SELECT * FROM cases WHERE caseId = :caseId LIMIT 1")
+  fun observeById(caseId: String): Flow<CaseEntity?>
+}
+
+@Dao
+interface PhotoDao {
+  @Insert(onConflict = OnConflictStrategy.REPLACE)
+  suspend fun insert(photo: CasePhotoEntity)
+
+  @Query("SELECT * FROM case_photos WHERE caseId = :caseId ORDER BY capturedAt DESC")
+  fun observeByCase(caseId: String): Flow<List<CasePhotoEntity>>
+}
+ data/AppDatabase.kt 
+package com.example.workshopai.data
+
+import androidx.room.Database
+import androidx.room.RoomDatabase
+
+@Database(
+  entities = [CaseEntity::class, CasePhotoEntity::class],
+  version = 1
+)
+abstract class AppDatabase : RoomDatabase() {
+  abstract fun caseDao(): CaseDao
+  abstract fun photoDao(): PhotoDao
+}
+
+4) Catalog (Make/Model/Year) محلي —  assets/vehicle_catalog.json 
+نفس المثال السابق (تويوتا/هيونداي…) ووسع القائمة لاحقًا.
+واكتب Loader بسيط:
+ domain/VehicleCatalog.kt 
+package com.example.workshopai.domain
+
+data class VehicleCatalog(val makes: List<Make>)
+data class Make(val id: String, val nameAr: String, val nameEn: String, val models: List<Model>)
+data class Model(val id: String, val nameAr: String, val nameEn: String, val years: YearRange)
+data class YearRange(val min: Int, val max: Int)
+للـ MVP: يمكنك أيضًا تخزين الكتالوج “hardcoded” بدل JSON لتوفير وقت، ثم تنقله إلى JSON لاحقًا.
+
+5) حفظ الصور محليًا حسب ملف السيارة
+ util/CaseFiles.kt 
+package com.example.workshopai.util
+
+import android.content.Context
+import java.io.File
+
+object CaseFiles {
+  fun caseDir(context: Context, caseId: String): File {
+    val root = File(context.getExternalFilesDir(null), "WorkshopAI/cases/$caseId")
+    if (!root.exists()) root.mkdirs()
+    return root
+  }
+
+  fun originalDir(context: Context, caseId: String): File =
+    File(caseDir(context, caseId), "original").apply { mkdirs() }
+}
+
+6) CameraX داخل Compose (MVP)
+أسهل دمج: استخدم  AndroidView  لعرض  PreviewView .
+ ui/CameraScreen.kt  (فكرة عامة)
+• تفتح الكاميرا
+• تلتقط صورة
+• تحفظها في  originalDir(caseId) 
+• ترجع المسار
+(لو تحب، أرسل لك ملف CameraScreen كامل جاهز لأنه أطول قليلًا ويتضمن binding الكاميرا وImageCapture).
+
+7) OCR (ML Kit) محلي
+ ml/Ocr.kt 
+package com.example.workshopai.ml
+
+import android.graphics.Bitmap
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import kotlinx.coroutines.tasks.await
+
+suspend fun runOcr(bitmap: Bitmap): String {
+  val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+  val image = InputImage.fromBitmap(bitmap, 0)
+  val result = recognizer.process(image).await()
+  return result.text ?: ""
+}
+
+8) Navigation + Screens (4 شاشات MVP)
+•  CaseListScreen 
+•  CreateCaseScreen 
+•  CaseDetailScreen 
+•  CameraScreen 
+ MainActivity.kt  (مختصر)
+class MainActivity : ComponentActivity() {
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContent { AppNav() }
+  }
+}
+
+9) قواعد الإلزام (مهم)
+في  CreateCaseScreen  لا تفعيل زر “حفظ” إلا إذا:
+• Plate موجودة (بعد OCR أو إدخال يدوي)
+• وVehicle:
+• إما Make+Model+Year
+• أو  vehicleFreeText  مكتوب
+
+ما الذي تحتاجه مني الآن لأرسل “النسخة الجاهزة بالكامل”؟
+هل تريد:
+1. CameraScreen كامل (جاهز نسخ/لصق) مع حفظ الصورة وإرجاع  imagePath ؟  
+2. أم تريد أيضًا ViewModels + Repository + DI بسيط (بدون Hilt) لتشتغل بسرعة؟
+قلّي (1 فقط) أو (1+2).
+
+تمام — هذا (1+2): CameraScreen كامل جاهز + Repository + ViewModels + DI بسيط بدون Hilt (كلّه Kotlin/Compose).
+ملاحظة: الكود أدناه “قابل للنسخ/اللصق” كنقطة بداية. قد تحتاج تعديلات بسيطة على الإصدارات حسب مشروعك، لكن الهيكل صحيح ومستخدم بكثرة.
+
+(1) CameraScreen كامل (Compose + CameraX) يحفظ صورة ويرجع المسار
+Route
+سنستدعيه مثل:
+•  camera/{caseId}?mode=plate|general 
+ويرجع  imagePath  عبر  navController.previousBackStackEntry?.savedStateHandle .
+ ui/camera/CameraScreen.kt 
+package com.example.workshopai.ui.camera
+
+import android.Manifest
+import android.content.Context
+import android.net.Uri
+import android.os.Build
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import com.example.workshopai.util.CaseFiles
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
+
+@Composable
+fun CameraScreen(
+  caseId: String,
+  mode: String,
+  onResult: (imagePath: String) -> Unit,
+  onBack: () -> Unit
+) {
+  val context = LocalContext.current
+  val lifecycleOwner = LocalLifecycleOwner.current
+
+  var hasCameraPermission by remember { mutableStateOf(false) }
+  RequestPermission(
+    permission = Manifest.permission.CAMERA,
+    onGranted = { hasCameraPermission = true },
+    onDenied = { hasCameraPermission = false }
+  )
+
+  var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
+  val previewView = remember { PreviewView(context) }
+
+  LaunchedEffect(hasCameraPermission) {
+    if (!hasCameraPermission) return@LaunchedEffect
+
+    val cameraProvider = context.getCameraProvider()
+    val preview = androidx.camera.core.Preview.Builder().build().also {
+      it.surfaceProvider = previewView.surfaceProvider
+    }
+
+    val capture = ImageCapture.Builder()
+      .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+      .build()
+
+    val selector = CameraSelector.DEFAULT_BACK_CAMERA
+
+    cameraProvider.unbindAll()
+    cameraProvider.bindToLifecycle(lifecycleOwner, selector, preview, capture)
+
+    imageCapture = capture
+  }
+
+  Scaffold(
+    topBar = {
+      TopAppBar(
+        title = { Text(if (mode == "plate") "تصوير اللوحة" else "تصوير السيارة") },
+        navigationIcon = {
+          IconButton(onClick = onBack) { Text("رجوع") }
+        }
+      )
+    }
+  ) { padding ->
+    Column(Modifier.fillMaxSize().padding(padding)) {
+
+      Box(Modifier.weight(1f).fillMaxWidth()) {
+        if (!hasCameraPermission) {
+          Text(
+            "يلزم إذن الكاميرا",
+            modifier = Modifier.padding(16.dp)
+          )
+        } else {
+          AndroidView(
+            factory = { previewView },
+            modifier = Modifier.fillMaxSize()
+          )
+        }
+      }
+
+      Row(
+        Modifier.fillMaxWidth().padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+      ) {
+        OutlinedButton(onClick = onBack) { Text("إلغاء") }
+
+        Button(
+          enabled = hasCameraPermission && imageCapture != null,
+          onClick = {
+            val capture = imageCapture ?: return@Button
+
+            val file = createImageFile(context, caseId, mode)
+            val output = ImageCapture.OutputFileOptions.Builder(file).build()
+
+            capture.takePicture(
+              output,
+              ContextCompat.getMainExecutor(context),
+              object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                  onResult(file.absolutePath)
+                }
+                override fun onError(exception: ImageCaptureException) {
+                  // في MVP: يمكن عرض Snackbar
+                }
+              }
+            )
+          }
+        ) { Text("التقاط") }
+      }
+    }
+  }
+}
+
+private fun createImageFile(context: Context, caseId: String, mode: String): File {
+  val dir = CaseFiles.originalDir(context, caseId)
+  val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+  val prefix = if (mode == "plate") "PLATE" else "IMG"
+  return File(dir, "${prefix}_$ts.jpg")
+}
+
+private suspend fun Context.getCameraProvider(): ProcessCameraProvider =
+  kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+    val future = ProcessCameraProvider.getInstance(this)
+    future.addListener(
+      { cont.resume(future.get(), onCancellation = null) },
+      ContextCompat.getMainExecutor(this)
+    )
+  }
+Permission Composable (بدون مكتبات إضافية)
+ضع هذا في  ui/common/RequestPermission.kt :
+package com.example.workshopai.ui.common
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.*
+
+@Composable
+fun RequestPermission(
+  permission: String,
+  onGranted: () -> Unit,
+  onDenied: () -> Unit
+) {
+  val launcher = rememberLauncherForActivityResult(
+    ActivityResultContracts.RequestPermission()
+  ) { granted ->
+    if (granted) onGranted() else onDenied()
+  }
+
+  LaunchedEffect(permission) {
+    launcher.launch(permission)
+  }
+}
+
+(2) Repository + ViewModels + DI بسيط بدون Hilt
+A) AppContainer (DI بسيط)
+ AppContainer.kt 
+package com.example.workshopai
+
+import android.content.Context
+import androidx.room.Room
+import com.example.workshopai.data.AppDatabase
+import com.example.workshopai.data.CaseDao
+import com.example.workshopai.data.PhotoDao
+import com.example.workshopai.domain.CaseRepository
+import com.example.workshopai.domain.CaseRepositoryImpl
+
+class AppContainer(context: Context) {
+  private val db: AppDatabase = Room.databaseBuilder(
+    context,
+    AppDatabase::class.java,
+    "workshop_ai.db"
+  ).build()
+
+  private val caseDao: CaseDao = db.caseDao()
+  private val photoDao: PhotoDao = db.photoDao()
+
+  val caseRepository: CaseRepository = CaseRepositoryImpl(caseDao, photoDao)
+}
+Application class
+ WorkshopAiApp.kt 
+package com.example.workshopai
+
+import android.app.Application
+
+class WorkshopAiApp : Application() {
+  lateinit var container: AppContainer
+    private set
+
+  override fun onCreate() {
+    super.onCreate()
+    container = AppContainer(this)
+  }
+}
+وفي  AndroidManifest :
+<application
+  android:name=".WorkshopAiApp"
+  ... />
+
+B) Repository
+ domain/CaseRepository.kt 
+package com.example.workshopai.domain
+
+import com.example.workshopai.data.CaseEntity
+import com.example.workshopai.data.CasePhotoEntity
+import kotlinx.coroutines.flow.Flow
+
+interface CaseRepository {
+  fun observeCases(query: String?): Flow<List<CaseEntity>>
+  fun observeCase(caseId: String): Flow<CaseEntity?>
+  fun observePhotos(caseId: String): Flow<List<CasePhotoEntity>>
+
+  suspend fun upsertCase(case: CaseEntity)
+  suspend fun addPhoto(photo: CasePhotoEntity)
+}
+ domain/CaseRepositoryImpl.kt 
+package com.example.workshopai.domain
+
+import com.example.workshopai.data.CaseDao
+import com.example.workshopai.data.CaseEntity
+import com.example.workshopai.data.CasePhotoEntity
+import com.example.workshopai.data.PhotoDao
+import kotlinx.coroutines.flow.Flow
+
+class CaseRepositoryImpl(
+  private val caseDao: CaseDao,
+  private val photoDao: PhotoDao
+) : CaseRepository {
+
+  override fun observeCases(query: String?): Flow<List<CaseEntity>> {
+    return if (query.isNullOrBlank()) caseDao.observeAll() else caseDao.search(query)
+  }
+
+  override fun observeCase(caseId: String): Flow<CaseEntity?> = caseDao.observeById(caseId)
+
+  override fun observePhotos(caseId: String): Flow<List<CasePhotoEntity>> =
+    photoDao.observeByCase(caseId)
+
+  override suspend fun upsertCase(case: CaseEntity) = caseDao.upsert(case)
+
+  override suspend fun addPhoto(photo: CasePhotoEntity) = photoDao.insert(photo)
+}
+
+C) ViewModel Factories (بدون Hilt)
+ ui/AppViewModelFactories.kt 
+package com.example.workshopai.ui
+
+import android.app.Application
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.example.workshopai.WorkshopAiApp
+import com.example.workshopai.ui.cases.*
+
+class AppVmFactory(private val app: Application) : ViewModelProvider.Factory {
+  private val repo = (app as WorkshopAiApp).container.caseRepository
+
+  override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    return when {
+      modelClass.isAssignableFrom(CaseListViewModel::class.java) ->
+        CaseListViewModel(repo) as T
+      modelClass.isAssignableFrom(CreateCaseViewModel::class.java) ->
+        CreateCaseViewModel(repo) as T
+      modelClass.isAssignableFrom(CaseDetailViewModel::class.java) ->
+        CaseDetailViewModel(repo) as T
+      else -> throw IllegalArgumentException("Unknown VM: $modelClass")
+    }
+  }
+}
+
+D) CaseListViewModel
+ ui/cases/CaseListViewModel.kt 
+package com.example.workshopai.ui.cases
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.workshopai.data.CaseEntity
+import com.example.workshopai.domain.CaseRepository
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+
+data class CaseListState(
+  val query: String = "",
+  val items: List<CaseEntity> = emptyList()
+)
+
+class CaseListViewModel(private val repo: CaseRepository) : ViewModel() {
+  private val queryFlow = MutableStateFlow("")
+
+  val state: StateFlow<CaseListState> =
+    queryFlow
+      .debounce(200)
+      .flatMapLatest { q -> repo.observeCases(q) }
+      .map { list -> CaseListState(query = queryFlow.value, items = list) }
+      .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CaseListState())
+
+  fun setQuery(q: String) {
+    queryFlow.value = q
+  }
+}
+
+E) CreateCaseViewModel (إلزام الموديل + تعديل يدوي)
+ ui/cases/CreateCaseViewModel.kt 
+package com.example.workshopai.ui.cases
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.workshopai.data.CaseEntity
+import com.example.workshopai.domain.CaseRepository
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import java.util.UUID
+
+data class CreateCaseState(
+  val country: String = "LY",
+  val plateText: String = "",
+  val plateTextRaw: String? = null,
+
+  val makeId: String? = null,
+  val modelId: String? = null,
+  val year: Int? = null,
+
+  val vehicleFreeText: String = "",
+  val useFreeText: Boolean = false,
+
+  val canSave: Boolean = false,
+  val saving: Boolean = false
+)
+
+class CreateCaseViewModel(private val repo: CaseRepository) : ViewModel() {
+  private val _state = MutableStateFlow(CreateCaseState())
+  val state: StateFlow<CreateCaseState> = _state.asStateFlow()
+
+  fun setCountry(v: String) = update { it.copy(country = v) }
+  fun setPlateText(v: String) = update { it.copy(plateText = v) }
+
+  fun setMake(v: String?) = update { it.copy(makeId = v, modelId = null, year = null) }
+  fun setModel(v: String?) = update { it.copy(modelId = v, year = null) }
+  fun setYear(v: Int?) = update { it.copy(year = v) }
+
+  fun setUseFreeText(v: Boolean) = update { it.copy(useFreeText = v) }
+  fun setVehicleFreeText(v: String) = update { it.copy(vehicleFreeText = v) }
+
+  fun applyPlateFromOcr(text: String, raw: String?) {
+    update { it.copy(plateText = text, plateTextRaw = raw) }
+  }
+
+  fun saveCase(onSaved: (caseId: String) -> Unit) {
+    val s = _state.value
+    if (!s.canSave || s.saving) return
+
+    viewModelScope.launch {
+      update { it.copy(saving = true) }
+
+      val now = System.currentTimeMillis()
+      val caseId = UUID.randomUUID().toString()
+
+      val entity = CaseEntity(
+        caseId = caseId,
+        plateCountry = s.country,
+        plateText = s.plateText.trim(),
+        plateTextRaw = s.plateTextRaw,
+        vehicleMakeId = if (!s.useFreeText) s.makeId else null,
+        vehicleModelId = if (!s.useFreeText) s.modelId else null,
+        vehicleYear = if (!s.useFreeText) s.year else null,
+        vehicleFreeText = if (s.useFreeText) s.vehicleFreeText.trim() else null,
+        status = "NEW",
+        createdAt = now,
+        updatedAt = now
+      )
+
+      repo.upsertCase(entity)
+      update { it.copy(saving = false) }
+      onSaved(caseId)
+    }
+  }
+
+  private fun update(block: (CreateCaseState) -> CreateCaseState) {
+    val newState = block(_state.value)
+    val plateOk = newState.plateText.trim().isNotEmpty()
+    val vehicleOk =
+      if (newState.useFreeText) newState.vehicleFreeText.trim().isNotEmpty()
+      else (newState.makeId != null && newState.modelId != null && newState.year != null)
+
+    _state.value = newState.copy(canSave = plateOk && vehicleOk)
+  }
+}
+
+F) CaseDetailViewModel + إضافة صورة لملف السيارة
+ ui/cases/CaseDetailViewModel.kt 
+package com.example.workshopai.ui.cases
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.workshopai.data.CaseEntity
+import com.example.workshopai.data.CasePhotoEntity
+import com.example.workshopai.domain.CaseRepository
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import java.util.UUID
+
+data class CaseDetailState(
+  val case: CaseEntity? = null,
+  val photos: List<CasePhotoEntity> = emptyList()
+)
+
+class CaseDetailViewModel(private val repo: CaseRepository) : ViewModel() {
+
+  fun observe(caseId: String): StateFlow<CaseDetailState> {
+    return combine(
+      repo.observeCase(caseId),
+      repo.observePhotos(caseId)
+    ) { c, photos ->
+      CaseDetailState(case = c, photos = photos)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CaseDetailState())
+  }
+
+  fun addPhoto(caseId: String, imagePath: String) {
+    viewModelScope.launch {
+      val photo = CasePhotoEntity(
+        photoId = UUID.randomUUID().toString(),
+        caseId = caseId,
+        imagePath = imagePath,
+        thumbnailPath = null,
+        capturedAt = System.currentTimeMillis(),
+        ocrText = null,
+        ocrConfidence = null,
+        notes = null
+      )
+      repo.addPhoto(photo)
+    }
+  }
+}
+
+ربط الكاميرا مع Navigation (كيفية تمرير نتيجة المسار)
+في الشاشة التي تفتح الكاميرا:
+• عند الرجوع من CameraScreen، اقرأ:
+ savedStateHandle.get<String>("camera_result_path") 
+مثال سريع:
+val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
+val result = savedStateHandle?.get<String>("camera_result_path")
+LaunchedEffect(result) {
+  if (result != null) {
+    vm.addPhoto(caseId, result)
+    savedStateHandle.remove<String>("camera_result_path")
+  }
+}
+وفي  CameraScreen  عند نجاح الالتقاط:
+onResult(file.absolutePath) // ثم في NavHost: احفظه في savedStateHandle وارجع
+
+ماذا بقي لتكتمل “نسخة تعمل”؟
+إذا تريدها “تشتغل من أول Run” بدون أي فراغات، قلّي فقط:
+1. هل تريد إنشاء الملف أولًا ثم تصوير (الموصى به)  
+أم تريد السماح بالتصوير قبل إنشاء الملف؟
+لو اخترت (الموصى به)، سأرسل لك  NavHost  كامل + 3 Screens بسيطة (List/Create/Detail) مرتبطة فعليًا بـ ViewModels والـ repo، بحيث يصبح لديك MVP جاهز للعمل.
+
