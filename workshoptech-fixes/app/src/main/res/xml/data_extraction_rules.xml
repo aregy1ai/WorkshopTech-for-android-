@@ -1,12 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ data extraction rules.
+  Excludes sensitive data from Google cloud backups and device-to-device transfers.
+  Reference: AndroidManifest android:dataExtractionRules="@xml/data_extraction_rules"
+-->
 <data-extraction-rules>
     <cloud-backup>
-        <exclude domain="database" path="workshop_tech.db" />
-        <exclude domain="sharedpref" path="workshop_tech_prefs.xml" />
-        <exclude domain="file" path="." />
+        <!-- DB contains sensitive case / customer / financial data — never back up -->
+        <exclude domain="database" path="workshop_tech.db"/>
+        <exclude domain="database" path="workshop_tech.db-shm"/>
+        <exclude domain="database" path="workshop_tech.db-wal"/>
+        <!-- EncryptedSharedPreferences are device-key-encrypted — unusable after restore -->
+        <exclude domain="sharedpref" path="workshoptech_secure_prefs"/>
+        <exclude domain="sharedpref" path="workshoptech_secure_prefs_fallback"/>
+        <!-- Media files: large, device-specific, re-capturable -->
+        <exclude domain="file" path="case_photos"/>
+        <exclude domain="file" path="case_videos"/>
+        <exclude domain="file" path="thumbnails"/>
+        <exclude domain="file" path="temp"/>
     </cloud-backup>
     <device-transfer>
-        <exclude domain="database" path="workshop_tech.db" />
-        <exclude domain="file" path="." />
+        <!-- Mirror cloud-backup policy for device-to-device (ADB / Quick Switch) -->
+        <exclude domain="database" path="workshop_tech.db"/>
+        <exclude domain="sharedpref" path="workshoptech_secure_prefs"/>
+        <exclude domain="file" path="case_photos"/>
+        <exclude domain="file" path="case_videos"/>
+        <exclude domain="file" path="temp"/>
     </device-transfer>
 </data-extraction-rules>

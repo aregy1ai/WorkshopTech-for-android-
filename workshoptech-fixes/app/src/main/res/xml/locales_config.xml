@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 13+ app-level locale declaration -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="ar"/>
+    <locale android:name="ar-LY"/>
+    <locale android:name="ar-SA"/>
+    <locale android:name="ar-AE"/>
+    <locale android:name="ar-EG"/>
+    <locale android:name="en"/>
+</locale-config>

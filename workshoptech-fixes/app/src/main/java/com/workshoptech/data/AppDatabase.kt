@@ -10,7 +10,12 @@ import com.workshoptech.data.migration.DatabaseMigrations
 import kotlinx.coroutines.Dispatchers
 
 /**
- * Room database — v3.
+ * Room database — v4 (current).
+ *
+ * Schema version history:
+ *  v1 → v2: initial base tables
+ *  v2 → v3: video & motion analysis tables
+ *  v3 → v4: full column coverage (status, timestamps, analysis fields)
  *
  * Performance:
  *  - WAL journal mode for better concurrent read/write throughput.

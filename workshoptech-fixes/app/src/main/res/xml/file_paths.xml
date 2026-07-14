@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  FileProvider paths — WorkshopTech
+  Mirrors the directory structure in FileManager.kt.
+  All media stored in app-private filesDir (no external storage needed).
+-->
 <paths>
-    <external-files-path name="photos" path="Pictures/" />
-    <external-files-path name="videos" path="Movies/" />
-    <cache-path name="cache" path="." />
-    <external-cache-path name="external_cache" path="." />
-    <files-path name="files" path="." />
+    <!-- App-internal media (case_photos, case_videos, thumbnails) -->
+    <files-path name="case_photos"  path="case_photos/" />
+    <files-path name="case_videos"  path="case_videos/" />
+    <files-path name="thumbnails"   path="thumbnails/" />
+    <files-path name="temp"         path="temp/" />
+    <!-- Fallback: share any file under filesDir -->
+    <files-path name="files"        path="." />
+    <!-- Cache (Coil image cache) -->
+    <cache-path name="cache"        path="." />
 </paths>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Arabic locale overrides.
+  Most strings are already in Arabic in the default strings.xml.
+  This file handles locale-specific formatting differences.
+-->
+<resources>
+    <string name="app_name">ورشة تك</string>
+
+    <!-- Date/currency formatting hints (Arabic locale) -->
+    <string name="currency_format">%s ر</string>
+    <string name="date_format_short">dd/MM/yyyy</string>
+    <string name="date_format_long">EEEE، d MMMM yyyy</string>
+
+    <!-- Android 15: per-app language picker label -->
+    <string name="language_arabic">العربية</string>
+    <string name="language_english">English</string>
+</resources>

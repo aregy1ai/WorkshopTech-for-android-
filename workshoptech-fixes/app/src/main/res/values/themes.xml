@@ -1,24 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Base application theme (used for splash + system chrome) -->
+    <!-- ── Base theme (Compose — no ActionBar) ────────────────────────────── -->
     <style name="Theme.WorkshopTech" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_dark</item>
         <item name="colorSecondary">@color/secondary</item>
-        <item name="android:statusBarColor">@color/status_bar</item>
-        <item name="android:navigationBarColor">@color/navigation_bar</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- Android 15: enforce edge-to-edge for nav bar -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <!-- Splash screen (API 31+ — SplashScreen API) -->
         <item name="android:windowSplashScreenBackground">@color/splash_background</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="android:windowSplashScreenBrandingImage">@drawable/ic_workshop_logo</item>
     </style>
 
-    <!-- Splash screen theme (API 12+) -->
-    <style name="Theme.WorkshopTech.Splash" parent="Theme.WorkshopTech">
-        <item name="android:windowBackground">@drawable/splash_bg</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowActionBar">false</item>
-        <item name="android:windowFullscreen">false</item>
-        <item name="android:windowContentOverlay">@null</item>
+    <!-- ── Splash theme — transitional until Compose takes over ──────────── -->
+    <!--
+        Used in AndroidManifest for the activity theme.
+        The SplashScreen API (androidx.core:core-splashscreen) handles
+        the actual animated splash; this theme just sets window background.
+    -->
+    <style name="Theme.WorkshopTech.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.WorkshopTech</item>
     </style>
 
 </resources>
