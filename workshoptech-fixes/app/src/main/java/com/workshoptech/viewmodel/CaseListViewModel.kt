@@ -1,13 +1,16 @@
 package com.workshoptech.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.workshoptech.data.entity.CaseEntity
 import com.workshoptech.data.repository.WorkshopRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+@Immutable
 data class CaseListState(
     val cases: List<CaseEntity>  = emptyList(),
     val query: String            = "",
@@ -16,7 +19,7 @@ data class CaseListState(
     val error: String?           = null
 )
 
-@OptIn(FlowPreview::class)
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class CaseListViewModel(
     private val repository: WorkshopRepository
 ) : ViewModel() {
@@ -38,7 +41,7 @@ class CaseListViewModel(
                     }
                 }
                 .catch { e ->
-                    _state.value = _state.value.copy(isLoading = false, error = e.message)
+                    _state.value = _state.value.copy(isLoading = false, error = e.localizedMessage)
                 }
                 .collect { cases ->
                     _state.value = _state.value.copy(

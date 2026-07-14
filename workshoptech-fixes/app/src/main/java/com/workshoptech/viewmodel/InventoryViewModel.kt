@@ -1,5 +1,6 @@
 package com.workshoptech.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.workshoptech.data.entity.InventoryEntity
@@ -7,6 +8,7 @@ import com.workshoptech.data.repository.WorkshopRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+@Immutable
 data class InventoryState(
     val items: List<InventoryEntity>    = emptyList(),
     val lowStockItems: List<InventoryEntity> = emptyList(),
@@ -29,7 +31,7 @@ class InventoryViewModel(
             ) { all, low ->
                 InventoryState(items = all, lowStockItems = low, isLoading = false)
             }.catch { e ->
-                _state.value = _state.value.copy(isLoading = false, error = e.message)
+                _state.value = _state.value.copy(isLoading = false, error = e.localizedMessage)
             }.collect { s -> _state.value = s }
         }
     }

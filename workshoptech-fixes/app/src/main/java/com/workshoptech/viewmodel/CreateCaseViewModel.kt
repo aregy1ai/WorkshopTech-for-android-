@@ -1,14 +1,17 @@
 package com.workshoptech.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.workshoptech.data.entity.CaseEntity
 import com.workshoptech.data.entity.CustomerEntity
 import com.workshoptech.data.repository.WorkshopRepository
+import com.workshoptech.util.InputValidator
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+@Immutable
 data class CreateCaseState(
     val customerPhone: String    = "",
     val customerName: String     = "",
@@ -69,10 +72,22 @@ class CreateCaseViewModel(
 
     fun createCase() {
         val s = _state.value
-        if (s.licensePlate.isBlank()) {
-            _state.value = s.copy(error = "رقم اللوحة مطلوب")
-            return
+
+        // ── Input validation ──────────────────────────────────────────────────
+        val plateResult = InputValidator.validatePlate(s.licensePlate)
+        if (!plateResult.isValid) {
+            _state.value = s.copy(error = plateResult.errorMessage); return
         }
+        val nameResult = if (s.existingCustomer == null)
+            InputValidator.validateName(s.customerName) else null
+        if (nameResult != null && !nameResult.isValid) {
+            _state.value = s.copy(error = nameResult.errorMessage); return
+        }
+        val yearResult = InputValidator.validateYear(s.year)
+        if (!yearResult.isValid) {
+            _state.value = s.copy(error = yearResult.errorMessage); return
+        }
+
         viewModelScope.launch {
             _state.value = _state.value.copy(isSaving = true, error = null)
             try {
@@ -81,8 +96,8 @@ class CreateCaseViewModel(
                     repository.upsertCustomer(
                         CustomerEntity(
                             customerId = id,
-                            name       = s.customerName,
-                            phone      = s.customerPhone,
+                            name       = nameResult!!.valueOrNull() ?: s.customerName,
+                            phone      = s.customerPhone.trim(),
                             email      = null,
                             createdAt  = System.currentTimeMillis()
                         )
@@ -95,20 +110,21 @@ class CreateCaseViewModel(
                     CaseEntity(
                         caseId       = caseId,
                         customerId   = customerId,
-                        licensePlate = s.licensePlate,
-                        make         = s.make,
-                        model        = s.model,
-                        year         = s.year.toIntOrNull(),
-                        color        = s.color,
+                        licensePlate = plateResult.valueOrNull() ?: s.licensePlate,
+                        make         = InputValidator.sanitizeText(s.make),
+                        model        = InputValidator.sanitizeText(s.model),
+                        year         = yearResult.valueOrNull()?.toIntOrNull(),
+                        color        = InputValidator.sanitizeText(s.color),
                         status       = "NEW",
-                        notes        = s.notes.takeIf { it.isNotBlank() },
+                        notes        = s.notes.takeIf { it.isNotBlank() }
+                            ?.let { InputValidator.sanitizeText(it) },
                         createdAt    = System.currentTimeMillis(),
                         updatedAt    = System.currentTimeMillis()
                     )
                 )
                 _state.value = _state.value.copy(isSaving = false, createdCaseId = caseId)
             } catch (e: Exception) {
-                _state.value = _state.value.copy(isSaving = false, error = e.message)
+                _state.value = _state.value.copy(isSaving = false, error = e.localizedMessage)
             }
         }
     }

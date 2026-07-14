@@ -1,14 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network Security Config — WorkshopTech
+  Hardened:
+    1. Cleartext traffic DISABLED globally (HTTPS-only, all environments).
+    2. Only system CAs trusted in release — no user-installed certs.
+    3. Certificate pinning block ready — fill in SPKI hashes when cloud API is live.
+    4. debug-overrides allows user CAs for Charles/Proxyman only in debug builds.
+-->
 <network-security-config>
+
+    <!-- Release: HTTPS only, system CAs only -->
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
-            <certificates src="system" />
+            <certificates src="system"/>
         </trust-anchors>
     </base-config>
+
+    <!--
+    ══ CERTIFICATE PINNING (activate when cloud backend is deployed) ══════════
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">api.workshoptech.app</domain>
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+        <pin-set expiration="2027-07-01">
+            <!- Primary leaf SPKI hash (get via: openssl s_client -connect host:443 |
+                openssl x509 -pubkey -noout | openssl pkey -pubin -outform der |
+                openssl dgst -sha256 -binary | base64) ->
+            <pin digest="SHA-256">REPLACE_WITH_PRIMARY_SPKI_HASH=</pin>
+            <!- Backup (CA or intermediate) SPKI hash ->
+            <pin digest="SHA-256">REPLACE_WITH_BACKUP_SPKI_HASH=</pin>
+        </pin-set>
+    </domain-config>
+    ══════════════════════════════════════════════════════════════════════════ -->
+
+    <!-- Debug only: allow user-installed CAs for MITM proxy interception -->
     <debug-overrides>
         <trust-anchors>
-            <certificates src="system" />
-            <certificates src="user" />
+            <certificates src="system"/>
+            <certificates src="user"/>
         </trust-anchors>
     </debug-overrides>
+
 </network-security-config>

@@ -1,5 +1,6 @@
 package com.workshoptech.viewmodel
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.workshoptech.data.entity.*
@@ -7,6 +8,7 @@ import com.workshoptech.data.repository.WorkshopRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+@Immutable
 data class CaseDetailState(
     val case: CaseEntity?               = null,
     val customer: CustomerEntity?       = null,
@@ -44,7 +46,7 @@ class CaseDetailViewModel(
                     isLoading   = false
                 )
             }.catch { e ->
-                _state.value = _state.value.copy(isLoading = false, error = e.message)
+                _state.value = _state.value.copy(isLoading = false, error = e.localizedMessage)
             }.collect { s ->
                 val customer = s.case?.customerId?.let { repository.findCustomerById(it) }
                 _state.value = s.copy(customer = customer)
