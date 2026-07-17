@@ -198,17 +198,32 @@ dependencies {
     // ── Lottie animations ─────────────────────────────────────────────────────
     implementation("com.airbnb.android:lottie-compose:6.5.2")
 
-    // ── Testing ───────────────────────────────────────────────────────────────
+    // ── Unit Testing ──────────────────────────────────────────────────────────
     testImplementation("junit:junit:4.13.2")
-    testImplementation("io.mockk:mockk:1.13.12")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
-    testImplementation("androidx.room:room-testing:2.6.1")
-    testImplementation("app.cash.turbine:turbine:1.1.0")         // Flow testing
 
+    // MockK — inline variant enables mocking final Android classes (Bitmap, etc.)
+    // on the JVM without Robolectric
+    testImplementation("io.mockk:mockk:1.13.12")
+
+    // Coroutines testing (TestScope, runTest, StandardTestDispatcher, advanceUntilIdle)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+
+    // Room in-memory DB helper (used in androidTest; listed here too for future JVM use)
+    testImplementation("androidx.room:room-testing:2.6.1")
+
+    // Turbine — concise Flow / StateFlow assertions
+    testImplementation("app.cash.turbine:turbine:1.1.0")
+
+    // Robolectric — provides real Android framework on JVM (Bitmap, Context, etc.)
+    // Required for QualityFilter and BitmapUtils tests where real pixel math matters.
+    testImplementation("org.robolectric:robolectric:4.13")
+
+    // ── Instrumented Tests ────────────────────────────────────────────────────
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.work:work-testing:2.9.1")
+    androidTestImplementation("io.mockk:mockk-android:1.13.12")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
