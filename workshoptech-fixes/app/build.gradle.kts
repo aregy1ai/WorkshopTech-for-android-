@@ -6,6 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")   // Kotlin 2.x Compose compiler
     id("com.google.devtools.ksp")
+    id("app.cash.paparazzi")                    // Screenshot tests (JVM, no device)
 }
 
 android {
@@ -197,6 +198,11 @@ dependencies {
 
     // ── Lottie animations ─────────────────────────────────────────────────────
     implementation("com.airbnb.android:lottie-compose:6.5.2")
+
+    // ── Screenshot Tests (Paparazzi — JVM, no device required) ──────────────
+    // Paparazzi renders Compose on the JVM using LayoutLib.
+    // Tests live in src/test/; run with ./gradlew recordPaparazziDebug / verifyPaparazziDebug.
+    testImplementation("app.cash.paparazzi:paparazzi:1.3.4")
 
     // ── Unit Testing ──────────────────────────────────────────────────────────
     testImplementation("junit:junit:4.13.2")

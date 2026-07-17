@@ -76,6 +76,44 @@ jobs:
           path: workshoptech-fixes/app/build/test-results/testDebugUnitTest/*.xml
           retention-days: 14
 
+  # ── 2b. Paparazzi screenshot verification (JVM, no device) ───────────────
+  screenshot-verify:
+    name: Screenshot Tests (Paparazzi)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Fetch the full history so golden images committed in the repo are available
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIB }}
+          cache: gradle
+
+      - name: Verify Paparazzi screenshots against goldens
+        working-directory: workshoptech-fixes
+        run: ./gradlew verifyPaparazziDebug --stacktrace
+
+      - name: Upload snapshot diffs (only on failure)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: paparazzi-diffs-${{ github.sha }}
+          path: workshoptech-fixes/app/build/paparazzi/failures/
+          retention-days: 7
+
+      - name: Upload all golden snapshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: paparazzi-goldens-${{ github.sha }}
+          path: workshoptech-fixes/app/src/test/snapshots/
+          retention-days: 14
+
   # ── 3. Instrumented tests (Android emulator — DAOs, migrations, Compose) ─
   instrumented-test:
     name: Instrumented Tests (Emulator)
