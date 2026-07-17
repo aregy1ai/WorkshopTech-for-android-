@@ -11,39 +11,41 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import com.workshoptech.data.entity.InspectionEntity
 import com.workshoptech.ui.common.*
 import com.workshoptech.ui.theme.*
-import com.workshoptech.viewmodel.InspectionType
+import com.workshoptech.viewmodel.InspectionCheckpoint
 import com.workshoptech.viewmodel.InspectionViewModel
 
-// ─── Checklist Items per Checkpoint ──────────────────────────────────────────
+// ─── Checklist items per checkpoint ──────────────────────────────────────────
 
-private val CHECKLISTS: Map<InspectionType, List<String>> = mapOf(
-    InspectionType.T1 to listOf(
+private val CHECKLISTS: Map<InspectionCheckpoint, List<String>> = mapOf(
+    InspectionCheckpoint.T1 to listOf(
         "تصوير اللوحة", "تصوير العداد", "تصوير الضرر (3 زوايا)",
         "تصوير شامل (6 جهات)", "توثيق الخدوش القديمة",
         "فحص الإطارات", "توقيع العميل", "فحص AI للأضرار"
     ),
-    InspectionType.T2 to listOf(
+    InspectionCheckpoint.T2 to listOf(
         "استواء السطح", "تناسق خطوط التصميم",
         "سماكة المعجون < 3 مم", "لا زوايا حادة",
         "لا فقاعات", "صنفرة جيدة", "حواف نظيفة",
         "تجربة تركيب", "الأجزاء المتحركة تعمل"
     ),
-    InspectionType.T3 to listOf(
+    InspectionCheckpoint.T3 to listOf(
         "معاينة فني الدهان", "توقيع استلام",
         "اتفاق مناطق الدهان", "تحديد اللون والخلطة",
         "تغطية المناطق", "تنظيف السطح",
         "درجة حرارة 18–25°", "رطوبة < 60%"
     ),
-    InspectionType.T4 to listOf(
+    InspectionCheckpoint.T4 to listOf(
         "اختبار الخلطة على بطاقة", "تجفيف البطاقة",
         "مقارنة اللون (شمس + مصباح)", "موافقة على اللون",
         "تسجيل كود الخلطة", "حساب كمية الدهان",
         "تجهيز مسدس الرش", "تنظيف منطقة الرش", "تثبيت صحيح"
     ),
-    InspectionType.T5 to listOf(
+    InspectionCheckpoint.T5 to listOf(
         "لا ترهل (sags)", "لا تجعّد (orange peel)", "لا حبوب (seeds)", "لا بقع (fisheye)",
         "سماكة طبقة الطلاء", "جودة البريق", "لا خدوش تحت الطلاء",
         "لا فقاعات هواء", "لا تسرب حواف",
@@ -52,7 +54,7 @@ private val CHECKLISTS: Map<InspectionType, List<String>> = mapOf(
         "مقارنة قبل/بعد", "موافقة مراقب الجودة",
         "توقيع الفني", "التوثيق الفوتوغرافي"
     ),
-    InspectionType.T6 to listOf(
+    InspectionCheckpoint.T6 to listOf(
         "تركيب جميع الأجزاء", "تثبيت المسامير",
         "سلاسة الفتح/الإغلاق", "عمل النوافذ",
         "تلميع", "تنظيف",
@@ -69,13 +71,13 @@ fun InspectionScreen(
     onNavigateBack: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
-    var activeType by remember { mutableStateOf<InspectionType?>(null) }
+    var activeCheckpoint by remember { mutableStateOf<InspectionCheckpoint?>(null) }
 
     LaunchedEffect(caseId) { viewModel.loadForCase(caseId) }
 
     LaunchedEffect(state.savedSuccess) {
         if (state.savedSuccess) {
-            activeType = null
+            activeCheckpoint = null
             viewModel.clearSuccess()
         }
     }
@@ -85,45 +87,44 @@ fun InspectionScreen(
     ) { padding ->
         Column(Modifier.padding(top = padding.calculateTopPadding()).fillMaxSize()) {
 
-            // Checkpoint progress tabs
             CheckpointProgressRow(
                 inspections = state.inspections,
-                onSelectType = { t ->
-                    activeType = t
-                    viewModel.openInspection(caseId, t)
+                onSelectCheckpoint = { cp ->
+                    activeCheckpoint = cp
+                    viewModel.openInspection(caseId, cp)
                 }
             )
 
             HorizontalDivider()
 
             AnimatedContent(
-                targetState = activeType,
+                targetState = activeCheckpoint,
                 transitionSpec = { slideInHorizontally { it } togetherWith slideOutHorizontally { -it } },
                 label = "insp_content"
-            ) { type ->
-                if (type == null) {
+            ) { cp ->
+                if (cp == null) {
                     InspectionOverview(state.inspections)
                 } else {
                     ChecklistEditor(
-                        type      = type,
-                        existing  = state.currentInspection,
-                        isSaving  = state.isSaving,
-                        onSave    = { status, checklist, notes ->
+                        checkpoint = cp,
+                        existing   = state.currentInspection,
+                        isSaving   = state.isSaving,
+                        onSave     = { status, checklistJson, notes ->
                             val insp = state.currentInspection
                             if (insp != null) {
                                 viewModel.saveInspection(
-                                    inspectionId = insp.inspectionId,
-                                    caseId       = caseId,
-                                    type         = type.name,
-                                    status       = status,
-                                    inspectorId  = null,
-                                    checklist    = checklist,
-                                    notes        = notes,
-                                    images       = null
+                                    inspectionId  = insp.inspectionId,
+                                    caseId        = caseId,
+                                    type          = cp.name,
+                                    status        = status,
+                                    inspectedBy   = null,
+                                    checklistJson = checklistJson,
+                                    notes         = notes,
+                                    photoIds      = null
                                 )
                             }
                         },
-                        onCancel = { activeType = null }
+                        onCancel = { activeCheckpoint = null }
                     )
                 }
             }
@@ -131,12 +132,12 @@ fun InspectionScreen(
     }
 }
 
-// ─── Progress row ──────────────────────────────────────────────────────────
+// ─── Progress row ────────────────────────────────────────────────────────────
 
 @Composable
 private fun CheckpointProgressRow(
-    inspections: List<com.workshoptech.data.entity.InspectionEntity>,
-    onSelectType: (InspectionType) -> Unit
+    inspections: List<InspectionEntity>,
+    onSelectCheckpoint: (InspectionCheckpoint) -> Unit
 ) {
     val statusMap = inspections.associate { it.type to it.status }
 
@@ -144,22 +145,22 @@ private fun CheckpointProgressRow(
         Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        InspectionType.entries.forEach { t ->
-            val status = statusMap[t.name]
+        InspectionCheckpoint.entries.forEach { cp ->
+            val status = statusMap[cp.name]
             val (bg, fg) = when (status) {
                 "PASSED" -> Green100 to Green700
                 "FAILED" -> Red100   to Red700
                 else     -> Gray200  to Gray700
             }
             Surface(
-                onClick = { onSelectType(t) },
-                modifier = Modifier.weight(1f),
-                shape    = RoundedCornerShape(8.dp),
-                color    = bg,
+                onClick        = { onSelectCheckpoint(cp) },
+                modifier       = Modifier.weight(1f),
+                shape          = RoundedCornerShape(8.dp),
+                color          = bg,
                 tonalElevation = 2.dp
             ) {
                 Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(t.name, style = MaterialTheme.typography.labelLarge, color = fg)
+                    Text(cp.name, style = MaterialTheme.typography.labelLarge, color = fg)
                     Text(
                         when (status) { "PASSED" -> "✓" "FAILED" -> "✗" else -> "○" },
                         color = fg, style = MaterialTheme.typography.titleSmall
@@ -170,10 +171,10 @@ private fun CheckpointProgressRow(
     }
 }
 
-// ─── Overview ─────────────────────────────────────────────────────────────────
+// ─── Overview ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun InspectionOverview(inspections: List<com.workshoptech.data.entity.InspectionEntity>) {
+private fun InspectionOverview(inspections: List<InspectionEntity>) {
     if (inspections.isEmpty()) {
         EmptyState(Icons.Default.Assignment, "اختر نقطة تفتيش أعلاه للبدء")
         return
@@ -182,13 +183,22 @@ private fun InspectionOverview(inspections: List<com.workshoptech.data.entity.In
         items(inspections) { insp ->
             Card(shape = RoundedCornerShape(10.dp), elevation = CardDefaults.cardElevation(1.dp)) {
                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val icon = when (insp.status) { "PASSED" -> Icons.Default.CheckCircle "FAILED" -> Icons.Default.Cancel else -> Icons.Default.RadioButtonUnchecked }
+                    val icon = when (insp.status) {
+                        "PASSED" -> Icons.Default.CheckCircle
+                        "FAILED" -> Icons.Default.Cancel
+                        else     -> Icons.Default.RadioButtonUnchecked
+                    }
                     val tint = when (insp.status) { "PASSED" -> Green500 "FAILED" -> Red500 else -> Gray400 }
                     Icon(icon, null, tint = tint, modifier = Modifier.size(28.dp))
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(InspectionType.valueOf(insp.type).label, style = MaterialTheme.typography.titleSmall)
-                        insp.notes?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        val label = runCatching { InspectionCheckpoint.valueOf(insp.type).label }
+                            .getOrDefault(insp.type)
+                        Text(label, style = MaterialTheme.typography.titleSmall)
+                        insp.notes?.let {
+                            Text(it, style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
@@ -200,40 +210,42 @@ private fun InspectionOverview(inspections: List<com.workshoptech.data.entity.In
 
 @Composable
 private fun ChecklistEditor(
-    type:     InspectionType,
-    existing: com.workshoptech.data.entity.InspectionEntity?,
-    isSaving: Boolean,
-    onSave:   (status: String, checklist: String, notes: String) -> Unit,
-    onCancel: () -> Unit
+    checkpoint: InspectionCheckpoint,
+    existing:   InspectionEntity?,
+    isSaving:   Boolean,
+    onSave:     (status: String, checklistJson: String, notes: String) -> Unit,
+    onCancel:   () -> Unit
 ) {
-    val items   = CHECKLISTS[type] ?: emptyList()
+    val items   = CHECKLISTS[checkpoint] ?: emptyList()
     val checked = remember { mutableStateMapOf<Int, Boolean>().apply { items.indices.forEach { put(it, false) } } }
     var notes   by remember { mutableStateOf(existing?.notes ?: "") }
 
     val passedCount = checked.values.count { it }
-    val allPassed   = passedCount == items.size
+    val allPassed   = passedCount == items.size && items.isNotEmpty()
 
     LazyColumn(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         item {
-            Text(type.label, style = MaterialTheme.typography.titleMedium, color = Blue600)
+            Text(checkpoint.label, style = MaterialTheme.typography.titleMedium, color = Blue600)
             Spacer(Modifier.height(4.dp))
             LinearProgressIndicator(
                 progress = { if (items.isEmpty()) 0f else passedCount.toFloat() / items.size },
-                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                color    = if (allPassed) Green500 else Orange500
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = if (allPassed) Green500 else Orange500
             )
-            Text("$passedCount / ${items.size} بنود", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("$passedCount / ${items.size} بنود",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(8.dp))
         }
 
         items(items.size) { idx ->
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked         = checked[idx] ?: false,
                     onCheckedChange = { checked[idx] = it },
@@ -256,19 +268,25 @@ private fun ChecklistEditor(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("رجوع") }
                 Button(
-                    onClick  = { onSave(if (allPassed) "PASSED" else "IN_PROGRESS", checked.values.joinToString(","), notes) },
+                    onClick  = {
+                        val status = if (allPassed) "PASSED" else "IN_PROGRESS"
+                        val json   = items.indices.joinToString(",") { i -> if (checked[i] == true) "1" else "0" }
+                        onSave(status, json, notes)
+                    },
                     enabled  = !isSaving,
                     modifier = Modifier.weight(1f),
-                    colors   = ButtonDefaults.buttonColors(containerColor = if (allPassed) Green700 else Orange600)
+                    colors   = ButtonDefaults.buttonColors(
+                        containerColor = if (allPassed) Green700 else Orange600
+                    )
                 ) {
-                    if (isSaving) CircularProgressIndicator(Modifier.size(18.dp), color = White, strokeWidth = 2.dp)
-                    else Text(if (allPassed) "✓ اجتاز" else "حفظ")
+                    if (isSaving) {
+                        CircularProgressIndicator(Modifier.size(18.dp), color = White, strokeWidth = 2.dp)
+                    } else {
+                        Text(if (allPassed) "✓ اجتاز" else "حفظ")
+                    }
                 }
             }
             Spacer(Modifier.height(24.dp))
         }
     }
 }
-
-private fun Modifier.clip(shape: androidx.compose.ui.graphics.Shape) =
-    this.then(Modifier.padding(0.dp))

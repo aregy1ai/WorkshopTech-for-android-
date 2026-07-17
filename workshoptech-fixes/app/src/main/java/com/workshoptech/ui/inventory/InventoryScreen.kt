@@ -86,7 +86,16 @@ fun InventoryScreen(
     if (showAdd) {
         AddItemDialog(
             onSave = { name, cat, qty, min, price ->
-                viewModel.upsert(InventoryEntity(UUID.randomUUID().toString(), name, cat, qty, min, price, null))
+                viewModel.upsert(
+                    InventoryEntity(
+                        itemId      = UUID.randomUUID().toString(),
+                        name        = name,
+                        category    = cat,
+                        quantity    = qty,
+                        minQuantity = min,
+                        unitPrice   = price
+                    )
+                )
                 showAdd = false
             },
             onDismiss = { showAdd = false }

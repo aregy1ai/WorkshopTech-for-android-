@@ -85,7 +85,7 @@ fun SettingsScreen(
             item {
                 SettingsGroup(title = "عن التطبيق") {
                     SettingsInfoRow(Icons.Default.Info, "الإصدار", "1.0.0")
-                    SettingsInfoRow(Icons.Default.Storage, "قاعدة البيانات", "v3 (13 جدول)")
+                    SettingsInfoRow(Icons.Default.Storage, "قاعدة البيانات", "v4 (13 جدول)")
                     SettingsInfoRow(Icons.Default.Psychology, "نماذج AI", "7 نماذج TFLite")
                     SettingsInfoRow(Icons.Default.Language, "الدول المدعومة", "22 دولة عربية")
                 }

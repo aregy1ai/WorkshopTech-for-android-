@@ -72,7 +72,16 @@ fun CustomerScreen(
     if (showAddDialog) {
         AddCustomerDialog(
             onSave    = { name, phone ->
-                viewModel.upsert(CustomerEntity(UUID.randomUUID().toString(), name, phone, null, System.currentTimeMillis()))
+                val now = System.currentTimeMillis()
+                viewModel.upsert(
+                    CustomerEntity(
+                        customerId = UUID.randomUUID().toString(),
+                        name       = name,
+                        phone      = phone.takeIf { it.isNotBlank() },
+                        createdAt  = now,
+                        updatedAt  = now
+                    )
+                )
                 showAddDialog = false
             },
             onDismiss = { showAddDialog = false }
