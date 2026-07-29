@@ -1,0 +1,26 @@
+-keep class com.workshoptech.data.entity.** { *; }
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
+-dontwarn androidx.room.paging.**
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class com.google.gson.** { *; }
+-keep class com.workshoptech.domain.model.** { *; }
+-keep class com.google.mlkit.** { *; }
+-dontwarn com.google.mlkit.**
+-keep class org.tensorflow.lite.** { *; }
+-dontwarn org.tensorflow.lite.**
+-keep class org.tensorflow.lite.gpu.** { *; }
+-dontwarn org.tensorflow.lite.gpu.**
+-keep class org.tensorflow.lite.support.** { *; }
+-dontwarn org.tensorflow.lite.support.**
+-keep class androidx.camera.** { *; }
+-dontwarn androidx.camera.**
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+-keep class androidx.compose.** { *; }
+-dontwarn androidx.compose.**
+-keep class coil.** { *; }
+-dontwarn coil.**
+-keepclassmembers class com.workshoptech.data.entity.** { <fields>; <init>(...); }
+-keepclassmembers class com.workshoptech.domain.model.** { <fields>; <init>(...); }

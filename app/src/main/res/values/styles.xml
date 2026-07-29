@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.WorkshopTech" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">#FF1565C0</item>
+        <item name="android:colorPrimaryDark">#FF0D47A1</item>
+        <item name="android:colorAccent">#FF7B1FA2</item>
+        <item name="android:statusBarColor">#FF0D47A1</item>
+        <item name="android:navigationBarColor">#FF0D47A1</item>
+        <item name="android:windowBackground">#FF121212</item>
+    </style>
+</resources>
